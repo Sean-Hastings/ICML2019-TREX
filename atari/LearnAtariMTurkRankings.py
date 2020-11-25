@@ -7,7 +7,7 @@ import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from run_test import *
+from utils.agent import *
 from baselines.common.trex_utils import preprocess
 
 

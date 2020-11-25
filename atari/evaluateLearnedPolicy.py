@@ -6,7 +6,7 @@ import time
 import numpy as np
 import random
 import torch
-from run_test import *
+from utils.agent import *
 #import matplotlib.pylab as plt
 import argparse
 

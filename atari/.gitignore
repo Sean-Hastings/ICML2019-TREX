@@ -1,0 +1,7 @@
+*.pyc
+*.params
+*.png
+*.npy
+*.zip
+*.tar.gz
+models

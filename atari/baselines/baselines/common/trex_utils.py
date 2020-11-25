@@ -46,9 +46,9 @@ def mask_score(obs, env_name):
     elif env_name == "montezumarevenge":
         n_top = 10
         obs_copy[:,:n_top,:,:] = 0
-    else:
-        print("NOT MASKING SCORE FOR GAME: " + env_name)
-        pass
+    #else:
+        #print("NOT MASKING SCORE FOR GAME: " + env_name)
+        #pass
         #n = 20
         #obs_copy[:,-n:,:,:] = 0
     return obs_copy

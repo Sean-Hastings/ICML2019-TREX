@@ -120,7 +120,7 @@ if __name__ == '__main__':
     parser.add_argument('--episode_count', default=100)
     parser.add_argument('--record_video', action='store_true')
     parser.add_argument('--render', action='store_true')
-    
+
     args = parser.parse_args()
 
     stochastic = True #it helps Atari policies to not get stuck if there is a little noise
