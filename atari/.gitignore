@@ -4,4 +4,5 @@
 *.npy
 *.zip
 *.tar.gz
+*.mp4
 models

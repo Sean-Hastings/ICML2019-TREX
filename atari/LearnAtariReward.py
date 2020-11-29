@@ -23,74 +23,77 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
     print(device)
     loss_criterion = nn.CrossEntropyLoss()
 
+    debug=True
+    print_interval = 100
+
     cum_loss = 0.0
     training_data = list(zip(training_inputs, training_outputs))
     for epoch in range(num_iter):
         np.random.shuffle(training_data)
         training_obs, training_labels = zip(*training_data)
         epoch_loss = 0
-        for i in list(range(len(training_labels)))[::batch_size]:
-            batch_inds = slice(i, i + batch_size)
+        for i in list(range(len(training_labels))):
+            print_epoch = i % print_interval == 0
+
+            batch_inds = slice(i, i + 1)
             traj_i, traj_j = zip(*training_obs[batch_inds])
             traj_i = [torch.from_numpy(np.array(traj)).float().to(device) for traj in traj_i]
             traj_j = [torch.from_numpy(np.array(traj)).float().to(device) for traj in traj_j]
             labels = torch.from_numpy(np.array(training_labels[batch_inds])).to(device)
 
-            #zero out gradient
-            optimizer.zero_grad()
-
             #forward + backward + optimize
             outputs, abs_rewards = reward_network.forward(traj_i, traj_j)
             #outputs = outputs.unsqueeze(0)
-            loss = loss_criterion(outputs, labels.long()) + l1_reg * abs_rewards
-            loss = loss.mean()
+            loss = loss_criterion(outputs, labels.long()).mean() + l1_reg * abs_rewards
             loss.backward()
 
-            ########################
-            '''
-            print('')
-            print('###########################')
-            _norm = []
-            for p in reward_network.parameters():
-                if p.grad is not None:
-                    _norm += [p.grad.view(-1).detach()]
-            _norm = torch.cat(_norm).norm()
-            print('grad norm pre-clip: {}'.format(_norm))
-            '''
+            if i % batch_size == 0:
+                '''
+                print('')
+                print('###########################')
+                _norm = []
+                for p in reward_network.parameters():
+                    if p.grad is not None:
+                        _norm += [p.grad.view(-1).detach()]
+                _norm = torch.cat(_norm).norm()
+                print('grad norm pre-clip: {}'.format(_norm))
+                '''
 
-            clip_grad_norm_(reward_network.parameters(), 1)
+                clip_grad_norm_(reward_network.parameters(), 10)
 
-            '''
-            _norm = []
-            for p in reward_network.parameters():
-                if p.grad is not None:
-                    _norm += [p.grad.view(-1).detach()]
-            _norm = torch.cat(_norm).norm()
-            print('grad norm post-clip: {}'.format(_norm))
-            print(outputs.detach().cpu().numpy(), labels.detach().cpu().numpy())
-            print('###########################')
-            '''
-            ########################
+                '''
+                _norm = []
+                for p in reward_network.parameters():
+                    if p.grad is not None:
+                        _norm += [p.grad.view(-1).detach()]
+                _norm = torch.cat(_norm).norm()
+                print('grad norm post-clip: {}'.format(_norm))
+                print(outputs.detach().cpu().numpy(), labels.detach().cpu().numpy())
+                '''
 
-            optimizer.step()
+                optimizer.step()
+                optimizer.zero_grad()
 
             #print stats to see if learning
             item_loss = loss.item()
             cum_loss += item_loss
             epoch_loss += item_loss
-            print_interval = 100
             # The printed loss may not be perfectly accurate but good enough?
-            if i > 0 and i % print_interval < batch_size:
+            if print_epoch:
                 #print(i)
-                print("epoch {}:{}/{} loss {}".format(epoch+1, i, len(training_labels), cum_loss * batch_size / print_interval))#, end='\r')
+                if i > 0:
+                    cum_loss = cum_loss / print_interval
+                print("epoch {}:{}/{} loss {}".format(epoch+1, i, len(training_labels), cum_loss), end='\r')
                 #print(abs_rewards)
                 cum_loss = 0.0
                 #print("check pointing")
                 torch.save(reward_net.state_dict(), checkpoint_dir)
-        print('epoch {} average loss: {}'.format(epoch+1, epoch_loss * batch_size / len(training_labels)))
+        if debug:
+            print('\n\n                                       ####\n')
+        print('epoch {} average loss: {}'.format(epoch+1, epoch_loss / len(training_labels)))
         #'''
         for g in optimizer.param_groups:
-            g['lr'] *= 0.85
+            g['lr'] *= 0.8
         #'''
     print("finished training")
 
@@ -134,7 +137,8 @@ if __name__=="__main__":
     env_id, env_type = get_env_id_type(env_name)
 
     os.makedirs('learned_models', exist_ok=True)
-    args.reward_model_path = 'learned_models/' + args.env_name + '.params'
+    id = '_' + 's={}'.format(args.num_snippets) + '_t={}'.format(args.num_trajs)
+    args.reward_model_path = 'learned_models/' + args.env_name + id + '.params'
 
     seed = int(args.seed)
     torch.manual_seed(seed)
@@ -144,16 +148,16 @@ if __name__=="__main__":
     print("Training reward for", env_id)
     num_trajs =  args.num_trajs
     num_snippets = args.num_snippets
-    min_snippet_length = 100 # 50 #min length of trajectory for training comparison
+    min_snippet_length = 100 # 50 # min length of trajectory for training comparison
     max_snippet_length = 500 # 100
 
-    lr = 0.005 # 0.00005
+    lr = 0.001 # 0.00005
     weight_decay = 0.0
-    num_iter = 50 # 5 #num times through training data
-    l1_reg = 0#0.000001
+    num_iter = 15 # 5 #num times through training data
+    l1_reg = 0.00001
     stochastic = True
 
-    batch_size = 2
+    batch_size = 32
 
     env = make_vec_env(env_id, env_type, 1, seed,
                        wrapper_kwargs={

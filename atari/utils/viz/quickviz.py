@@ -180,11 +180,11 @@ plt.clf()
 '''
 
 alphas_extrapolate = np.log(np.array([np.sum(np.array(learning_rewards_extrapolate) == i) for i in inds_extrapolate]) + 1)
-print(alphas_extrapolate)
+#print(alphas_extrapolate)
 #alphas_extrapolate = (alphas_extrapolate - np.min(alphas_extrapolate)) / (np.max(alphas_extrapolate) - np.min(alphas_extrapolate))
 alphas_extrapolate = alphas_extrapolate / np.max(alphas_extrapolate)
 alphas_demos = np.log(np.array([np.sum(np.array(learning_rewards_demos) == i) for i in inds_demos]) + 1)
-print(alphas_demos)
+#print(alphas_demos)
 #alphas_demos = (alphas_demos - np.min(alphas_demos)) / (np.max(alphas_demos) - np.min(alphas_demos))
 alphas_demos = alphas_demos / np.max(alphas_demos)
 
@@ -245,7 +245,7 @@ print(len(traj_pr) / 20)
 # your system: for more information, see
 # http://matplotlib.sourceforge.net/api/animation_api.html
 ani.save(save_fig_dir + "/" + env_name + "_gt_vs_pred_rewards_animation.mp4", fps=30, extra_args=['-vcodec', 'libx264'])
-plt.show()
+#plt.show()
 
 
 

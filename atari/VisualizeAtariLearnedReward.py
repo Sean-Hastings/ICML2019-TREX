@@ -14,6 +14,7 @@ from utils.demos import generate_demos
 with torch.no_grad():
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('--env_name', default='', help='Select the environment name to run, i.e. pong')
+    parser.add_argument('--model_id', default='', help='Select the version of the reward model to visualize, i.e. "snippets=6000_trajectories=0"')
     parser.add_argument('--reward_net_path', default='', help="name and location for learned model params")
     parser.add_argument('--seed', default=0, help="random seed for experiments")
     parser.add_argument('--models_dir', default = ".", help="top directory where checkpoint models for demos are stored")
@@ -22,9 +23,11 @@ with torch.no_grad():
 
     env_name = args.env_name
     env_id, env_type = get_env_id_type(env_name)
+    if len(args.model_id) > 0:
+        args.model_id = '_' + args.model_id
 
-    save_fig_dir = args.save_fig_dir + '/' + args.env_name
-    reward_net_path = 'learned_models/' + env_name + '.params'#args.reward_net_path
+    save_fig_dir = args.save_fig_dir + '/' + args.env_name + args.model_id
+    reward_net_path = 'learned_models/' + env_name + args.model_id + '.params'#args.reward_net_path
     os.makedirs(save_fig_dir + '/np', exist_ok=True)
 
     seed = args.seed

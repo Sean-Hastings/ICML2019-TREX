@@ -132,8 +132,8 @@ def create_training_data(demonstrations, num_trajs, num_snippets, min_snippet_le
             ti_start = np.random.randint(tj_start, len(demonstrations[ti]) - rand_length + 1)
         #traj_i = demonstrations[ti][ti_start:ti_start+rand_length:2]
         #traj_j = demonstrations[tj][tj_start:tj_start+rand_length:2]
-        traj_i = demonstrations[ti][ti_start:ti_start+rand_length:2]
-        traj_j = demonstrations[tj][tj_start:tj_start+rand_length:2]
+        traj_i = demonstrations[ti][ti_start:ti_start+rand_length]
+        traj_j = demonstrations[tj][tj_start:tj_start+rand_length]
 
         max_traj_length = max(max_traj_length, len(traj_i), len(traj_j))
         if ti > tj:
