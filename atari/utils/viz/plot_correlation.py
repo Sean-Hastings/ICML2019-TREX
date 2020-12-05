@@ -2,9 +2,15 @@ import numpy as np
 from glob import glob
 import matplotlib.pyplot as plt
 plt.style.use('ggplot')
+import argparse
 
 
-graph_dir = 'graphs/'
+parser = argparse.ArgumentParser(description=None)
+parser.add_argument('--dir', default='graphs', help='directory of data (ex. "graphs")')
+args = parser.parse_args()
+
+
+graph_dir = args.dir + '/'
 envs  = [env[env.rfind('\\')+1:] for env in glob(graph_dir + '*') if not '.' in env]
 corrs = [[], [], [], [], []]
 
@@ -150,7 +156,7 @@ plt.ylabel("Correlation Coefficient")
 plt.ylim(-1, 1)
 plt.title("Correlation of Predicted and Ground Truth Rewards")
 
-plt.xticks(x_pos + width*len(envs)/2, x)
+plt.xticks(x_pos + width*(len(envs)-1)/2, x)
 plt.legend(loc='best')
 plt.savefig(graph_dir + str(envs).replace(' ', '') + "_gt_vs_pred_rewards_correlation.png")
 plt.clf()
@@ -166,7 +172,7 @@ plt.ylabel("Correlation Coefficient")
 plt.ylim(-1, 1)
 plt.title("Correlation of Predicted and Ground Truth Returns")
 
-plt.xticks(x_pos + width*len(envs)/2, x)
+plt.xticks(x_pos + width*(len(envs)-1)/2, x)
 plt.legend(loc='best')
 plt.savefig(graph_dir + str(envs).replace(' ', '') + "_gt_vs_pred_returns_correlation.png")
 plt.clf()
@@ -182,7 +188,7 @@ plt.ylabel("Correlation Coefficient")
 plt.ylim(-1, 1)
 plt.title("Correlation of Trajectory Length and Ground Truth Returns")
 
-plt.xticks(x_pos + width*len(envs)/2, x)
+plt.xticks(x_pos + width*(len(envs)-1)/2, x)
 plt.legend(loc='best')
 plt.savefig(graph_dir + str(envs).replace(' ', '') + "_gt_returns_vs_traj_length_correlation.png")
 plt.clf()
@@ -198,7 +204,7 @@ plt.ylabel("Correlation Coefficient")
 plt.ylim(-1, 1)
 plt.title("Correlation of Trajectory Length and Predicted Returns")
 
-plt.xticks(x_pos + width*len(envs)/2, x)
+plt.xticks(x_pos + width*(len(envs)-1)/2, x)
 plt.legend(loc='best')
 plt.savefig(graph_dir + str(envs).replace(' ', '') + "_pred_returns_vs_traj_length_correlation.png")
 plt.clf()
@@ -214,7 +220,7 @@ plt.ylabel("Correlation Coefficient")
 plt.ylim(-1, 1)
 plt.title("Correlation of Rewards, Returns, and Trajectory Lengths")
 
-plt.xticks(x_pos + width*len(envs)/2, x)
+plt.xticks(x_pos + width*(len(envs)-1)/2, x)
 plt.legend(loc='best')
 plt.savefig(graph_dir + str(envs).replace(' ', '') + "_rewards_returns_len_correlation.png")
 plt.clf()
