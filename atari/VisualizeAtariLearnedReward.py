@@ -50,6 +50,7 @@ with torch.no_grad():
 
     reward = Net()
     reward.load_state_dict(torch.load(reward_net_path))
+    reward.eval()
     reward.to(device)
 
     checkpoint_range_demos = get_checkpoint_range(env_name, demo=True)

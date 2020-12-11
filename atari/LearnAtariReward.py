@@ -153,7 +153,7 @@ if __name__=="__main__":
 
     lr = 0.001 # 0.00005
     weight_decay = 0.0
-    num_iter = 15 # 5 #num times through training data
+    num_iter = 25 # 5 #num times through training data
     l1_reg = 0.00001
     stochastic = True
 
@@ -196,6 +196,7 @@ if __name__=="__main__":
     learn_reward(reward_net, optimizer, training_obs, training_labels, num_iter, batch_size, l1_reg, args.reward_model_path)
     #save reward network
     torch.save(reward_net.state_dict(), args.reward_model_path)
+    reward_net.eval()
 
     #print out predicted cumulative returns and actual returns
     with torch.no_grad():

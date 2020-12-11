@@ -6,3 +6,4 @@
 *.tar.gz
 *.mp4
 models
+logs

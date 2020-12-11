@@ -12,7 +12,7 @@ https://github.com/dsbrown1331/learning-rewards-of-learners/releases/tag/atari25
 The main file to run is:
 LearnAtariReward.py
 
-Here's an example of how to run it. 
+Here's an example of how to run it.
 
 ```python LearnAtariReward.py --env_name breakout --reward_model_path ./learned_models/breakout_test.params --models_dir .```
 
@@ -82,8 +82,14 @@ For example
 OPENAI_LOG_FORMAT='stdout,log,csv,tensorboard' OPENAI_LOGDIR=/home/tflogs python -m baselines.run --alg=ppo2 --env=BreakoutNoFrameskip-v4 --custom_reward pytorch --custom_reward_path learned_models/breakout.params --seed 0 --num_timesteps=5e7  --save_interval=500 --num_env 9
 ```
 
+revised example:
+
+```
+python -m baselines.run --alg=ppo2 --env=PongNoFrameskip-v4 --custom_reward pytorch --custom_reward_path learned_models/pong_s=0_t=3000.params --seed 0 --num_timesteps=5e7 --num_env 9 --save_path=models/pong_learned_reward
+```
+
 Masking is done here:
-baselines/baselines/common/trex_utils.py 
+baselines/baselines/common/trex_utils.py
 
 Custom reward wrapper is here:
 baselines/baselines/common/custom_reward_wrapper.py
@@ -97,5 +103,3 @@ After training an RL agent use evaluateLearnedPolicy.py to evaluate the performa
 For example:
 
 ```python evaluateLearnedPolicy.py --env_name breakout --checkpointpath [path_to_rl_checkpoint]```
-
-
