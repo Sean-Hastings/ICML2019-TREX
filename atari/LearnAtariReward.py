@@ -133,6 +133,9 @@ if __name__=="__main__":
 
     args = parser.parse_args()
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(device)
+
     env_name = args.env_name
     env_id, env_type = get_env_id_type(env_name)
 
@@ -189,7 +192,6 @@ if __name__=="__main__":
     print("num_labels", len(training_labels))
 
     # Now we create a reward network and optimize it using the training data.
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     reward_net = Net()
     reward_net.to(device)
     optimizer = optim.Adam(reward_net.parameters(),  lr=lr, weight_decay=weight_decay)

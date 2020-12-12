@@ -22,7 +22,7 @@ class Net(nn.Module):
     def score_states(self, traj):
         '''caltulate per-observation reward of trajectory'''
         if len(traj.shape) == 4:
-            x = traj.permute(0,3,1,2) #get into NCHW format
+            x = traj.permute(0,3,1,2).contiguous() #get into NCHW format
             x = F.leaky_relu(self.conv1(x))
             x = F.leaky_relu(self.conv2(x))
             x = F.leaky_relu(self.conv3(x))

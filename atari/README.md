@@ -85,7 +85,7 @@ OPENAI_LOG_FORMAT='stdout,log,csv,tensorboard' OPENAI_LOGDIR=/home/tflogs python
 revised example:
 
 ```
-python -m baselines.run --alg=ppo2 --env=PongNoFrameskip-v4 --custom_reward pytorch --custom_reward_path learned_models/pong_s=0_t=3000.params --seed 0 --num_timesteps=5e7 --num_env 9 --save_path=models/pong_learned_reward
+python -m baselines.run --alg=ppo2 --env=PongNoFrameskip-v4 --custom_reward pytorch --custom_reward_path learned_models/placeholder --seed 0 --num_timesteps=5e7 --save_path=models/pong_learned_reward
 ```
 
 Masking is done here:
