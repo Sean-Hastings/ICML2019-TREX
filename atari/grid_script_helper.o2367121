@@ -1,0 +1,7 @@
+Logging to /tmp/2367121.1.vlong.q/openai-2020-12-12-15-30-05-328092
+Logging to /tmp/2367121.1.vlong.q/openai-2020-12-12-15-30-05-989658
+env_type: atari
+PongNoFrameskip-v4
+Env Name for Masking: pong
+Training ppo2 on atari:PongNoFrameskip-v4 with arguments 
+{'nsteps': 128, 'nminibatches': 4, 'lam': 0.95, 'gamma': 0.99, 'noptepochs': 4, 'log_interval': 1, 'ent_coef': 0.01, 'lr': <function atari.<locals>.<lambda> at 0x14939d29b3b0>, 'cliprange': <function atari.<locals>.<lambda> at 0x14939ae27050>, 'network': 'cnn'}

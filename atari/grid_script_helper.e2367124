@@ -1,0 +1,20 @@
+2020-12-12 15:38:29.976879: I tensorflow/core/platform/profile_utils/cpu_utils.cc:94] CPU Frequency: 2600100000 Hz
+2020-12-12 15:38:29.981322: I tensorflow/compiler/xla/service/service.cc:150] XLA service 0x55681e8dcec0 executing computations on platform Host. Devices:
+2020-12-12 15:38:29.981381: I tensorflow/compiler/xla/service/service.cc:158]   StreamExecutor device (0): <undefined>, <undefined>
+/data/people/shastin1/miniconda3/envs/trex/lib/python3.7/site-packages/torch/cuda/__init__.py:52: UserWarning: CUDA initialization: Found no NVIDIA driver on your system. Please check that you have an NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx (Triggered internally at  /opt/conda/conda-bld/pytorch_1607370141920/work/c10/cuda/CUDAFunctions.cpp:100.)
+  return torch._C._cuda_getDeviceCount() > 0
+WARNING:tensorflow:From /gpfs/main/home/shastin1/ICML2019-TREX/atari/baselines/baselines/common/input.py:57: to_float (from tensorflow.python.ops.math_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.cast instead.
+WARNING:tensorflow:From /data/people/shastin1/miniconda3/envs/trex/lib/python3.7/site-packages/tensorflow/python/framework/op_def_library.py:263: colocate_with (from tensorflow.python.framework.ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Colocations handled automatically by placer.
+WARNING:tensorflow:From /gpfs/main/home/shastin1/ICML2019-TREX/atari/baselines/baselines/common/policies.py:43: flatten (from tensorflow.python.layers.core) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use keras.layers.flatten instead.
+WARNING:tensorflow:From /data/people/shastin1/miniconda3/envs/trex/lib/python3.7/site-packages/tensorflow/python/ops/math_ops.py:3066: to_int32 (from tensorflow.python.ops.math_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.cast instead.
+WARNING:tensorflow:From /data/people/shastin1/miniconda3/envs/trex/lib/python3.7/site-packages/tensorflow/python/ops/math_grad.py:102: div (from tensorflow.python.ops.math_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Deprecated in favor of operator or tf.math.divide.
