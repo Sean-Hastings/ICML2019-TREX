@@ -2,6 +2,7 @@ import argparse
 import time
 import numpy as np
 import os
+import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -12,6 +13,11 @@ from utils.model import Net
 from utils.constants import MUJOCO_ENVS, get_env_id_type, get_checkpoint_range
 from utils.demos import generate_demos, create_training_data
 
+
+_print = print
+def print(*args, **kwargs):
+    _print(*args, **kwargs)
+    sys.stdout.flush()
 
 
 # Train the network
