@@ -5,5 +5,9 @@
 *.zip
 *.tar.gz
 *.mp4
-models
+*.e*
+*.o*
+*.pe*
+*.po*
 logs
+models
