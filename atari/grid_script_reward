@@ -1,3 +1,3 @@
 #!/bin/bash
 
-qsub -l vlong -pe smp 24 -cwd grid_script_helper_reward "$1"
+qsub -l gpus=1 -l vlong -cwd grid_script_helper_reward "$1"

@@ -5,5 +5,10 @@
 *.zip
 *.tar.gz
 *.mp4
-models
+*.e*
+*.o*
+*.pe*
+*.po*
+*.swp
 logs
+models
