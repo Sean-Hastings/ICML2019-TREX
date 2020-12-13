@@ -38,6 +38,7 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
         np.random.shuffle(training_data)
         training_obs, training_labels = zip(*training_data)
         epoch_loss = 0
+        start_time = time.time()
         for i in list(range(len(training_labels))):
             print_epoch = i % print_interval == 0
 
@@ -87,13 +88,15 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
             # The printed loss may not be perfectly accurate but good enough?
             if print_epoch:
                 #print(i)
+                fps = batch_size / (time.time() - start_time)
                 if i > 0:
                     cum_loss = cum_loss / print_interval
-                print("epoch {}:{}/{} loss {}".format(epoch+1, i, len(training_labels), cum_loss), end='\r')
+                print("epoch {}:{}/{} loss {}  |  fps {}".format(epoch+1, i, len(training_labels), cum_loss, fps), end='\r')
                 #print(abs_rewards)
                 cum_loss = 0.0
                 #print("check pointing")
                 torch.save(reward_net.state_dict(), checkpoint_dir)
+                start_time = time.time()
         if debug:
             print('\n\n                                       ####\n')
         print('epoch {} average loss: {}'.format(epoch+1, epoch_loss / len(training_labels)))
