@@ -88,7 +88,7 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
             # The printed loss may not be perfectly accurate but good enough?
             if print_epoch:
                 #print(i)
-                fps = batch_size / (time.time() - start_time)
+                fps = print_interval / (time.time() - start_time)
                 if i > 0:
                     cum_loss = cum_loss / print_interval
                 print("epoch {}:{}/{} loss {}  |  fps {}".format(epoch+1, i, len(training_labels), cum_loss, fps), end='\r')
