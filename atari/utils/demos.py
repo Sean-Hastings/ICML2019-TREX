@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import lmdb
 import pickle
+import sys
 import os.path
 from os import makedirs
 from baselines.common.trex_utils import preprocess
@@ -14,7 +15,7 @@ _print = print
 def print(*args, **kwargs):
     _print(*args, **kwargs)
     sys.stdout.flush()
-    
+
 
 
 def generate_demos(env, env_name, agent, model_dir, checkpoint_range, save_dir='demos', episodes_per_checkpoint=5, map_increment=1e9):
