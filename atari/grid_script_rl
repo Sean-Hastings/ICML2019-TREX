@@ -1,3 +1,0 @@
-#!/bin/bash
-
-qsub -pe smp 24 -l vlong -cwd grid_script_helper_rl "$1" "$2" "$3"

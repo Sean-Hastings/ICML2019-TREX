@@ -6,12 +6,14 @@ import sys
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import DataLoader
 from torch.nn.utils.clip_grad import clip_grad_norm_
 
 from utils.agent import *
 from utils.model import Net
 from utils.constants import MUJOCO_ENVS, get_env_id_type, get_checkpoint_range
 from utils.demos import generate_demos, create_training_data
+from utils.dataset import LMDBDataset
 
 
 _print = print
@@ -21,7 +23,7 @@ def print(*args, **kwargs):
 
 
 # Train the network
-def learn_reward(reward_network, optimizer, training_inputs, training_outputs, num_iter, batch_size, l1_reg, checkpoint_dir):
+def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_reg, checkpoint_dir):
     reward_network.train()
     #check if gpu available
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -29,29 +31,29 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
     print(device)
     loss_criterion = nn.CrossEntropyLoss()
 
-    debug=True
+    debug = True
     print_interval = 100
 
-    cum_loss = 0.0
-    training_data = list(zip(training_inputs, training_outputs))
     for epoch in range(num_iter):
-        np.random.shuffle(training_data)
-        training_obs, training_labels = zip(*training_data)
+        dloader = DataLoader(dataset, shuffle=True, pin_memory=True, num_workers=8)
+
+        cum_loss = 0.0
         epoch_loss = 0
         start_time = time.time()
-        for i in list(range(len(training_labels))):
+        for i, data in enumerate(dloader):
             print_epoch = i % print_interval == 0
 
-            batch_inds = slice(i, i + 1)
-            traj_i, traj_j = zip(*training_obs[batch_inds])
-            traj_i = [torch.from_numpy(np.array(traj)).float().to(device) for traj in traj_i]
-            traj_j = [torch.from_numpy(np.array(traj)).float().to(device) for traj in traj_j]
-            labels = torch.from_numpy(np.array(training_labels[batch_inds])).to(device)
+            traj_i, traj_j, labels = data
+            actions_i = [traj_i[1][0].to(device)]
+            actions_j = [traj_j[1][0].to(device)]
+            traj_i    = [traj_i[0][0].to(device)]
+            traj_j    = [traj_j[0][0].to(device)]
+            labels    = labels[0].to(device)
 
             #forward + backward + optimize
-            outputs, abs_rewards = reward_network.forward(traj_i, traj_j)
+            outputs = reward_network.forward(traj_i, traj_j, actions_i, actions_j)
             #outputs = outputs.unsqueeze(0)
-            loss = loss_criterion(outputs, labels.long()).mean() + l1_reg * abs_rewards
+            loss = loss_criterion(outputs, labels.long()).mean() # + l1_reg * abs_rewards
             loss.backward()
 
             if i % batch_size == 0:
@@ -66,7 +68,7 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
                 print('grad norm pre-clip: {}'.format(_norm))
                 '''
 
-                clip_grad_norm_(reward_network.parameters(), 10)
+                #clip_grad_norm_(reward_network.parameters(), 10)
 
                 '''
                 _norm = []
@@ -91,18 +93,18 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
                 fps = print_interval / (time.time() - start_time)
                 if i > 0:
                     cum_loss = cum_loss / print_interval
-                print("epoch {}:{}/{} loss {}  |  fps {}".format(epoch+1, i, len(training_labels), cum_loss, fps), end='\r')
+                print("epoch {}:{}/{} loss {}  |  fps {}".format(epoch+1, i, len(dataset), cum_loss, fps), end='\r')
                 #print(abs_rewards)
                 cum_loss = 0.0
                 #print("check pointing")
                 torch.save(reward_net.state_dict(), checkpoint_dir)
                 start_time = time.time()
-        if debug:
-            print('\n\n                                       ####\n')
-        print('epoch {} average loss: {}'.format(epoch+1, epoch_loss / len(training_labels)))
+        #if debug:
+        #    print('\n\n                                       ####\n')
+        print('epoch {} average loss: {}                                   '.format(epoch+1, epoch_loss / len(dataset)))
         #'''
         for g in optimizer.param_groups:
-            g['lr'] *= 0.8
+            g['lr'] *= 0.85
         #'''
     print("finished training")
 
@@ -184,35 +186,19 @@ if __name__=="__main__":
 
     checkpoint_range = get_checkpoint_range(env_name, demo=True)
 
-    demonstrations, learning_returns, _, _, _ = generate_demos(env, env_name, agent, args.models_dir, checkpoint_range)
-
-    #print(len(learning_returns))
-    #print(len(demonstrations))
-    #print([a[0] for a in zip(learning_returns, demonstrations)])
-    demonstrations = sorted(zip(learning_returns,demonstrations), key=lambda pair: pair[0])
-    sorted_returns, demonstrations = zip(*demonstrations)
-    print('trajectory returns:', sorted_returns)
-
-    demo_lengths = [len(d) for d in demonstrations]
-    print("demo lengths:", demo_lengths)
-
-    training_obs, training_labels = create_training_data(demonstrations, num_trajs, num_snippets, min_snippet_length, max_snippet_length)
-    print("num training_obs", len(training_obs))
-    print("num_labels", len(training_labels))
+    generate_demos(env, env_name, agent, args.models_dir, checkpoint_range)
+    create_training_data(env_name, num_trajs, num_snippets, min_snippet_length, max_snippet_length)
 
     # Now we create a reward network and optimize it using the training data.
-    reward_net = Net()
+    reward_net = Net(env.action_space.n)
     reward_net.to(device)
     optimizer = optim.Adam(reward_net.parameters(),  lr=lr, weight_decay=weight_decay)
-    learn_reward(reward_net, optimizer, training_obs, training_labels, num_iter, batch_size, l1_reg, args.reward_model_path)
+
+    with LMDBDataset('datasets/' + env_name + ('_%d_%d.lmdb' % (num_snippets, num_trajs))) as dset:
+        learn_reward(reward_net, optimizer, dset, num_iter, batch_size, l1_reg, args.reward_model_path)
+
     #save reward network
     torch.save(reward_net.state_dict(), args.reward_model_path)
     reward_net.eval()
-
-    #print out predicted cumulative returns and actual returns
-    with torch.no_grad():
-        pred_returns = [reward_net.cum_return(torch.from_numpy(np.array(traj)).float().to(device))[0].item() for traj in demonstrations]
-    for i, p in enumerate(pred_returns):
-        print(i,p,sorted_returns[i])
 
     #print("accuracy", calc_accuracy(reward_net, training_obs, training_labels))
