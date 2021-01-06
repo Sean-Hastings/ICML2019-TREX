@@ -9,6 +9,14 @@ from baselines.common.trex_utils import preprocess
 from .constants import MUJOCO_ENVS
 
 
+
+_print = print
+def print(*args, **kwargs):
+    _print(*args, **kwargs)
+    sys.stdout.flush()
+    
+
+
 def generate_demos(env, env_name, agent, model_dir, checkpoint_range, save_dir='demos', episodes_per_checkpoint=5, map_increment=1e9):
     save_path = save_dir + '/' + env_name + '.lmdb'
     if os.path.exists(save_path):

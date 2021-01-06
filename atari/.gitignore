@@ -11,5 +11,4 @@
 *.po*
 *.swp
 *.lmdb
-logs
 models
