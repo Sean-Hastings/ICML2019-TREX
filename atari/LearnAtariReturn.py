@@ -23,7 +23,7 @@ def print(*args, **kwargs):
 
 
 # Train the network
-def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_reg, checkpoint_dir):
+def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_reg, checkpoint_dir, retsymb='\r'):
     reward_network.train()
     #check if gpu available
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -102,7 +102,7 @@ def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_re
                 frames = 0
                 if i > 0:
                     cum_loss = cum_loss / print_interval
-                print("epoch {}:{}/{} loss {}  |  eps {} fps {}".format(epoch+1, i, len(dataset), cum_loss, eps, fps), end='\r')
+                print("epoch {}:{}/{} loss {}  |  eps {} fps {}".format(epoch+1, i, len(dataset), cum_loss, eps, fps), end=retsymb)
                 #print(abs_rewards)
                 cum_loss = 0.0
                 #print("check pointing")
@@ -124,6 +124,7 @@ if __name__=="__main__":
     parser.add_argument('--env_name', default='', help='Select the environment name to run, i.e. pong')
     parser.add_argument('--reward_model_path', default='', help="name and location for learned model params, e.g. ./learned_models/breakout.params")
     parser.add_argument('--seed', default=0, help="random seed for experiments")
+    parser.add_argument('--grid', default=False, action='store_true', help="training on grid")
     parser.add_argument('--models_dir', default = ".", help="path to directory that contains a models directory in which the checkpoint models for demos are stored")
     parser.add_argument('--num_trajs', default = 0, type=int, help="number of downsampled full trajectories")
     parser.add_argument('--num_snippets', default = 6000, type = int, help = "number of short subtrajectories to sample")
@@ -151,13 +152,13 @@ if __name__=="__main__":
     min_snippet_length = 100 # 50 # min length of trajectory for training comparison
     max_snippet_length = 500 # 100
 
-    lr = 0.001 # 0.00005
+    lr = 0.01 # 0.00005
     weight_decay = 0.0
-    num_iter = 25 # 5 #num times through training data
+    num_iter = 50 # 5 #num times through training data
     l1_reg = 0.00001
     stochastic = True
 
-    batch_size = 32
+    batch_size = 64
 
     env = make_vec_env(env_id, env_type, 1, seed,
                        wrapper_kwargs={
@@ -180,8 +181,10 @@ if __name__=="__main__":
     reward_net.to(device)
     optimizer = optim.Adam(reward_net.parameters(),  lr=lr, weight_decay=weight_decay)
 
+    retsymb = '\n' if args.grid else '\r'
+
     with LMDBDataset('datasets/' + env_name + ('_%d_%d.lmdb' % (num_snippets, num_trajs))) as dset:
-        learn_reward(reward_net, optimizer, dset, num_iter, batch_size, l1_reg, args.reward_model_path)
+        learn_reward(reward_net, optimizer, dset, num_iter, batch_size, l1_reg, args.reward_model_path, retsymb=retsymb)
 
     #save reward network
     torch.save(reward_net.state_dict(), args.reward_model_path)
