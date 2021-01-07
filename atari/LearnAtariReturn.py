@@ -37,7 +37,8 @@ def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_re
     for epoch in range(num_iter):
         dloader = DataLoader(dataset, shuffle=True, pin_memory=True, num_workers=8)
 
-        cum_loss = 0.0
+        n_correct  = 0
+        cum_loss   = 0.0
         epoch_loss = 0
         start_time = time.time()
         for i, data in enumerate(dloader):
@@ -56,6 +57,9 @@ def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_re
             loss = loss_criterion(outputs, labels.long()).mean() # + l1_reg * abs_rewards
             loss.backward()
 
+            if loss < 0.693:
+                n_correct += 1
+
             if i % batch_size == 0:
                 '''
                 print('')
@@ -68,7 +72,7 @@ def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_re
                 print('grad norm pre-clip: {}'.format(_norm))
                 '''
 
-                #clip_grad_norm_(reward_network.parameters(), 10)
+                clip_grad_norm_(reward_network.parameters(), 10)
 
                 '''
                 _norm = []
@@ -101,36 +105,13 @@ def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_re
                 start_time = time.time()
         #if debug:
         #    print('\n\n                                       ####\n')
-        print('epoch {} average loss: {}                                   '.format(epoch+1, epoch_loss / len(dataset)))
+        accuracy = n_correct / len(dloader)
+        print('epoch {} average loss: {} average accuracy: {}                                  '.format(epoch+1, epoch_loss / len(dataset), accuracy))
         #'''
         for g in optimizer.param_groups:
             g['lr'] *= 0.85
         #'''
     print("finished training")
-
-
-
-def calc_accuracy(reward_network, training_inputs, training_outputs):
-    reward_network.eval()
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    loss_criterion = nn.CrossEntropyLoss()
-    num_correct = 0.
-    with torch.no_grad():
-        for i in range(len(training_inputs)):
-            label = training_outputs[i]
-            traj_i, traj_j = training_inputs[i]
-            traj_i = np.array(traj_i)
-            traj_j = np.array(traj_j)
-            traj_i = torch.from_numpy(traj_i).float().to(device)
-            traj_j = torch.from_numpy(traj_j).float().to(device)
-
-            #forward to get logits
-            outputs, abs_return = reward_network.forward(traj_i, traj_j)
-            _, pred_label = torch.max(outputs,0)
-            if pred_label.item() == label:
-                num_correct += 1.
-    return num_correct / len(training_inputs)
-
 
 
 if __name__=="__main__":
