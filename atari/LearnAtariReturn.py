@@ -23,13 +23,15 @@ def print(*args, **kwargs):
 
 
 # Train the network
-def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_reg, checkpoint_dir, retsymb='\r'):
+def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_reg, checkpoint_dir, log_dir, retsymb='\r'):
     reward_network.train()
     #check if gpu available
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # Assume that we are on a CUDA machine, then this should print a CUDA device:
     print(device)
     loss_criterion = nn.CrossEntropyLoss()
+
+    logs = ([],[],[])# (losses, epoch_losses, accuracies)
 
     debug = True
     print_interval = 100
@@ -103,6 +105,7 @@ def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_re
                 if i > 0:
                     cum_loss = cum_loss / print_interval
                 print("epoch {}:{}/{} loss {}  |  eps {} fps {}".format(epoch+1, i, len(dataset), cum_loss, eps, fps), end=retsymb)
+                logs[0] += [cum_loss]
                 #print(abs_rewards)
                 cum_loss = 0.0
                 #print("check pointing")
@@ -112,10 +115,13 @@ def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_re
         #    print('\n\n                                       ####\n')
         accuracy = n_correct / len(dloader)
         print('epoch {} average loss: {} average accuracy: {}                                  '.format(epoch+1, epoch_loss / len(dataset), accuracy))
+        logs[1] += [epoch_loss / len(dataset)]
+        logs[2] += [accuracy]
         #'''
         for g in optimizer.param_groups:
             g['lr'] *= 0.85
         #'''
+    pickle.dump(logs, log_dir)
     print("finished training")
 
 
@@ -140,6 +146,7 @@ if __name__=="__main__":
     os.makedirs('learned_models', exist_ok=True)
     id = '_' + 's={}'.format(args.num_snippets) + '_t={}'.format(args.num_trajs)
     args.reward_model_path = 'learned_models/' + args.env_name + id + '.params'
+    log_path = 'logs/' + args.env_name + id + '.log'
 
     seed = int(args.seed)
     torch.manual_seed(seed)
@@ -184,7 +191,7 @@ if __name__=="__main__":
     retsymb = '\n' if args.grid else '\r'
 
     with LMDBDataset('datasets/' + env_name + ('_%d_%d.lmdb' % (num_snippets, num_trajs))) as dset:
-        learn_reward(reward_net, optimizer, dset, num_iter, batch_size, l1_reg, args.reward_model_path, retsymb=retsymb)
+        learn_reward(reward_net, optimizer, dset, num_iter, batch_size, l1_reg, args.reward_model_path, log_path, retsymb=retsymb)
 
     #save reward network
     torch.save(reward_net.state_dict(), args.reward_model_path)
