@@ -38,6 +38,7 @@ def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_re
         dloader = DataLoader(dataset, shuffle=True, pin_memory=True, num_workers=8)
 
         n_correct  = 0
+        frames     = 0
         cum_loss   = 0.0
         epoch_loss = 0
         start_time = time.time()
@@ -50,6 +51,8 @@ def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_re
             traj_i    = [traj_i[0][0].to(device)]
             traj_j    = [traj_j[0][0].to(device)]
             labels    = labels[0].to(device)
+
+            frames += traj_i[0].shape[0] + traj_j[0].shape[0]
 
             #forward + backward + optimize
             outputs = reward_network.forward(traj_i, traj_j, actions_i, actions_j)
@@ -94,10 +97,12 @@ def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_re
             # The printed loss may not be perfectly accurate but good enough?
             if print_epoch:
                 #print(i)
-                fps = print_interval / (time.time() - start_time)
+                eps = print_interval / (time.time() - start_time)
+                fps = frames / (time.time() - start_time)
+                frames = 0
                 if i > 0:
                     cum_loss = cum_loss / print_interval
-                print("epoch {}:{}/{} loss {}  |  fps {}".format(epoch+1, i, len(dataset), cum_loss, fps), end='\r')
+                print("epoch {}:{}/{} loss {}  |  eps {} fps {}".format(epoch+1, i, len(dataset), cum_loss, eps, fps), end='\r')
                 #print(abs_rewards)
                 cum_loss = 0.0
                 #print("check pointing")
