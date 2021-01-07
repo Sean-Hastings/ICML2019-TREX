@@ -158,7 +158,7 @@ if __name__=="__main__":
     l1_reg = 0.00001
     stochastic = True
 
-    batch_size = 64
+    batch_size = 32
 
     env = make_vec_env(env_id, env_type, 1, seed,
                        wrapper_kwargs={
