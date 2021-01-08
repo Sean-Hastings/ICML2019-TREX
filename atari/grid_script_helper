@@ -3,4 +3,4 @@
 source /data/people/shastin1/miniconda3/bin/activate trex
 
 python LearnAtariReturn.py --env_name "$1" --num_snippets 0 --num_trajs 15000 --grid
-python evaluate.py --env_name "$1" --model_path learned_models/"$1"_s=0_t=3000.params
+python evaluate.py --env_name "$1" --model_path learned_models/"$1"_s=0_t=15000.params
