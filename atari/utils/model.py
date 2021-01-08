@@ -7,8 +7,10 @@ from itertools import accumulate
 
 
 class Net(nn.Module):
-    def __init__(self, action_space):
+    def __init__(self, action_space, name):
         super().__init__()
+        self.action_space = action_space
+        self.name = name
 
         self.conv1 = nn.Conv2d(4, 16, 7, stride=3)
         self.conv2 = nn.Conv2d(16, 16, 5, stride=2)
@@ -17,6 +19,18 @@ class Net(nn.Module):
         self.fc1 = nn.Linear(784, 64)
         #self.fc1 = nn.Linear(1936,64)
         self.fc2 = nn.Linear(64, action_space)
+
+
+    def act(self, ob):
+        x = ob.permute(0,3,1,2).contiguous() #get into NCHW format
+        x = F.leaky_relu(self.conv1(x))
+        x = F.leaky_relu(self.conv2(x))
+        x = F.leaky_relu(self.conv3(x))
+        x = F.leaky_relu(self.conv4(x))
+        x = x.view(-1, 784)
+        x = F.leaky_relu(self.fc1(x))
+        r = self.fc2(x)[0]
+        return torch.argmax(r)
 
 
     def score_states(self, traj, actions):

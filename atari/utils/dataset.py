@@ -77,5 +77,6 @@ class LMDBDataset(Dataset):
         self.close()
 
     def close(self):
-        self.env.close()
-        self.demo_env.close()
+        #self.env.close()
+        #self.demo_env.close()
+        pass

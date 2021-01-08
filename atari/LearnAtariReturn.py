@@ -1,6 +1,7 @@
 import argparse
 import time
 import numpy as np
+import pickle
 import os
 import sys
 import torch
@@ -31,7 +32,7 @@ def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_re
     print(device)
     loss_criterion = nn.CrossEntropyLoss()
 
-    logs = ([],[],[])# (losses, epoch_losses, accuracies)
+    logs = [[],[],[]] # (losses, epoch_losses, accuracies)
 
     debug = True
     print_interval = 100
@@ -119,9 +120,11 @@ def learn_reward(reward_network, optimizer, dataset, num_iter, batch_size, l1_re
         logs[2] += [accuracy]
         #'''
         for g in optimizer.param_groups:
-            g['lr'] *= 0.85
+            g['lr'] *= 0.95
         #'''
-    pickle.dump(logs, log_dir)
+
+    with open(log_dir, 'wb') as f:
+        pickle.dump(logs, f)
     print("finished training")
 
 
@@ -134,6 +137,7 @@ if __name__=="__main__":
     parser.add_argument('--models_dir', default = ".", help="path to directory that contains a models directory in which the checkpoint models for demos are stored")
     parser.add_argument('--num_trajs', default = 0, type=int, help="number of downsampled full trajectories")
     parser.add_argument('--num_snippets', default = 6000, type = int, help = "number of short subtrajectories to sample")
+    parser.add_argument('--num_iter', default=25, type=int, help="number epochs")
 
     args = parser.parse_args()
 
@@ -147,6 +151,7 @@ if __name__=="__main__":
     id = '_' + 's={}'.format(args.num_snippets) + '_t={}'.format(args.num_trajs)
     args.reward_model_path = 'learned_models/' + args.env_name + id + '.params'
     log_path = 'logs/' + args.env_name + id + '.log'
+    os.makedirs('logs', exist_ok=True)
 
     seed = int(args.seed)
     torch.manual_seed(seed)
@@ -159,9 +164,9 @@ if __name__=="__main__":
     min_snippet_length = 100 # 50 # min length of trajectory for training comparison
     max_snippet_length = 500 # 100
 
-    lr = 0.01 # 0.00005
+    lr = 0.001 # 0.00005
     weight_decay = 0.0
-    num_iter = 50 # 5 #num times through training data
+    num_iter = args.num_iter # 5 #num times through training data
     l1_reg = 0.00001
     stochastic = True
 
@@ -174,8 +179,7 @@ if __name__=="__main__":
                        })
 
 
-    if env_type == 'atari':
-        env = VecFrameStack(env, 4)
+    env = VecFrameStack(env, 4)
     agent = PPO2Agent(env, env_type, stochastic)
 
     checkpoint_range = get_checkpoint_range(env_name, demo=True)
@@ -184,7 +188,7 @@ if __name__=="__main__":
     create_training_data(env_name, num_trajs, num_snippets, min_snippet_length, max_snippet_length)
 
     # Now we create a reward network and optimize it using the training data.
-    reward_net = Net(env.action_space.n)
+    reward_net = Net(env.action_space.n, env_name + ('_%d_%d' % (num_snippets, num_trajs)))
     reward_net.to(device)
     optimizer = optim.Adam(reward_net.parameters(),  lr=lr, weight_decay=weight_decay)
 
