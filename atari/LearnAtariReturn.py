@@ -24,7 +24,7 @@ def print(*args, **kwargs):
 
 
 # Train the network
-def learn_return(network, optimizer, dataset, num_iter, batch_size, l1_reg, checkpoint_dir, log_dir, retsymb='\r'):
+def learn_return(network, optimizer, dataset, num_iter, batch_size, l1_reg, checkpoint_dir, log_dir, retsymb='\r', bc=False):
     network.train()
     #check if gpu available
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -58,14 +58,22 @@ def learn_return(network, optimizer, dataset, num_iter, batch_size, l1_reg, chec
 
             frames += traj_i[0].shape[0] + traj_j[0].shape[0]
 
-            #forward + backward + optimize
-            outputs, abs = network.forward(traj_i, traj_j, actions_i, actions_j, print_epoch)
-            #outputs = outputs.unsqueeze(0)
-            loss = loss_criterion(outputs, labels.long()).mean()
-            if loss < 0.693:
-                n_correct += 1
-            loss = loss + l1_reg * abs
-            loss.backward()
+            if bc:
+                for traj, actions in zip(traj_i+traj_j, actions_i+actions_j):
+                    outputs = network.bc(traj)
+                    loss = loss_criterion(outputs, actions.long().view(-1)).mean()
+                    loss.backward()
+                    abs = torch.Tensor([0])
+
+            else:
+                #forward + backward + optimize
+                outputs, abs = network.forward(traj_i, traj_j, actions_i, actions_j, print_epoch)
+                #outputs = outputs.unsqueeze(0)
+                loss = loss_criterion(outputs, labels.long()).mean()
+                if loss < 0.693:
+                    n_correct += 1
+                loss = loss + l1_reg * abs
+                loss.backward()
 
 
             if i % batch_size == 0:
@@ -81,7 +89,7 @@ def learn_return(network, optimizer, dataset, num_iter, batch_size, l1_reg, chec
                 print('grad norm pre-clip: {}'.format(_norm))
 
 
-                # clip_grad_norm_(network.parameters(), 10)
+                clip_grad_norm_(network.parameters(), 10)
 
 
                 _norm = []
@@ -125,7 +133,7 @@ def learn_return(network, optimizer, dataset, num_iter, batch_size, l1_reg, chec
         logs[2] += [accuracy]
         #'''
         for g in optimizer.param_groups:
-            g['lr'] *= 0.9
+            g['lr'] *= 0.95
         #'''
 
         #print("check pointing")
@@ -146,7 +154,9 @@ if __name__=="__main__":
     parser.add_argument('--models_dir', default = ".", help="path to directory that contains a models directory in which the checkpoint models for demos are stored")
     parser.add_argument('--num_trajs', default = 0, type=int, help="number of downsampled full trajectories")
     parser.add_argument('--num_snippets', default = 6000, type = int, help = "number of short subtrajectories to sample")
-    parser.add_argument('--num_iter', default=50, type=int, help="number epochs")
+    parser.add_argument('--num_iter', default=50, type=int, help="number of epochs")
+    parser.add_argument('--lr', default=0.0001, type=float, help="learning rate")
+    parser.add_argument('--bc', default=False, action='store_true', help='train bc objective instead of no-trex')
 
     args = parser.parse_args()
 
@@ -173,13 +183,13 @@ if __name__=="__main__":
     min_snippet_length = 100 # 50 # min length of trajectory for training comparison
     max_snippet_length = 500 # 100
 
-    lr = 0.001 # 0.00005
+    lr = args.lr # 0.00005
     weight_decay = 0.0
     num_iter = args.num_iter # 5 #num times through training data
     l1_reg = 0.01
     stochastic = True
 
-    batch_size = 4
+    batch_size = 32
 
     env = make_vec_env(env_id, env_type, 1, seed,
                        wrapper_kwargs={
@@ -207,7 +217,7 @@ if __name__=="__main__":
     retsymb = '\n' if args.grid else '\r'
 
     with LMDBDataset('datasets/' + env_name + ('_%d_%d.lmdb' % (num_snippets, num_trajs))) as dset:
-        learn_return(net, optimizer, dset, num_iter, batch_size, l1_reg, args.model_path, log_path, retsymb=retsymb)
+        learn_return(net, optimizer, dset, num_iter, batch_size, l1_reg, args.model_path, log_path, retsymb=retsymb, bc=args.bc)
 
     net.eval()
 

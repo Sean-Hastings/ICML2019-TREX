@@ -12,13 +12,17 @@ class Net(nn.Module):
         self.action_space = action_space
         self.name = name
 
-        self.conv1 = nn.Conv2d(4, 16, 7, stride=3)
-        self.conv2 = nn.Conv2d(16, 16, 5, stride=2)
-        self.conv3 = nn.Conv2d(16, 16, 3, stride=1)
-        self.conv4 = nn.Conv2d(16, 16, 3, stride=1)
-        self.fc1 = nn.Linear(784, 64)
+        multiplier = 4
+
+        self.linshape = 784*multiplier
+
+        self.conv1 = nn.Conv2d(4, 64, 7, stride=3)
+        self.conv2 = nn.Conv2d(64, 64, 5, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, 3, stride=1)
+        self.conv4 = nn.Conv2d(64, 16*multiplier, 3, stride=1)
+        self.fc1 = nn.Linear(self.linshape, 512)
         #self.fc1 = nn.Linear(1936,64)
-        self.fc2 = nn.Linear(64, action_space)
+        self.fc2 = nn.Linear(512, action_space)
 
 
     def act(self, ob):
@@ -27,11 +31,23 @@ class Net(nn.Module):
         x = F.leaky_relu(self.conv2(x))
         x = F.leaky_relu(self.conv3(x))
         x = F.leaky_relu(self.conv4(x))
-        x = x.view(-1, 784)
+        x = x.view(-1, self.linshape)
         x = F.leaky_relu(self.fc1(x))
         r = self.fc2(x).view(-1)
         print(r)
         return torch.argmax(r)
+
+
+    def bc(self, traj):
+        x = traj.permute(0,3,1,2).contiguous() #get into NCHW format
+        x = F.leaky_relu(self.conv1(x))
+        x = F.leaky_relu(self.conv2(x))
+        x = F.leaky_relu(self.conv3(x))
+        x = F.leaky_relu(self.conv4(x))
+        x = x.view(-1, self.linshape)
+        x = F.leaky_relu(self.fc1(x))
+        r = self.fc2(x)
+        return torch.softmax(r, dim=-1)
 
 
     def score_states(self, traj, actions, _print=False):
@@ -44,7 +60,7 @@ class Net(nn.Module):
             x = F.leaky_relu(self.conv2(x))
             x = F.leaky_relu(self.conv3(x))
             x = F.leaky_relu(self.conv4(x))
-            x = x.view(-1, 784)
+            x = x.view(-1, self.linshape)
             x = F.leaky_relu(self.fc1(x))
             r = self.fc2(x)
             abs = torch.abs(r.mean(dim=1)).mean() # encourage "advantage" predictions
@@ -80,8 +96,8 @@ class Net(nn.Module):
         rewards, abs = self.score_states(states, actions, _print)
         r_i     = [rewards[acc[0]:acc[1]] for acc in accum[:len(accum)//2]]
         r_j     = [rewards[acc[0]:acc[1]] for acc in accum[len(accum)//2:]]
-        cum_r_i = torch.cat([torch.mean(r).view(-1) for r in r_i])
-        cum_r_j = torch.cat([torch.mean(r).view(-1) for r in r_j])
+        cum_r_i = torch.cat([torch.sum(r).view(-1) for r in r_i])
+        cum_r_j = torch.cat([torch.sum(r).view(-1) for r in r_j])
         comp_r  = torch.stack([cum_r_i, cum_r_j], dim=-1)
         if _print:
             print(comp_r)
