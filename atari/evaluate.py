@@ -54,7 +54,7 @@ def generate_demos(env, env_name, model, agent, device, save_dir='evals', episod
                 print(a_act, action)
 
                 ob, r, done, _ = env.step(action)
-                env.render()
+                #env.render()
                 ob = preprocess(ob, env_name)
                 acc_reward += r[0]
                 steps += 1
