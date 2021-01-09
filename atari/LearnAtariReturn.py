@@ -146,7 +146,7 @@ if __name__=="__main__":
     parser.add_argument('--models_dir', default = ".", help="path to directory that contains a models directory in which the checkpoint models for demos are stored")
     parser.add_argument('--num_trajs', default = 0, type=int, help="number of downsampled full trajectories")
     parser.add_argument('--num_snippets', default = 6000, type = int, help = "number of short subtrajectories to sample")
-    parser.add_argument('--num_iter', default=15, type=int, help="number epochs")
+    parser.add_argument('--num_iter', default=50, type=int, help="number epochs")
 
     args = parser.parse_args()
 
@@ -179,7 +179,7 @@ if __name__=="__main__":
     l1_reg = 0.01
     stochastic = True
 
-    batch_size = 32
+    batch_size = 4
 
     env = make_vec_env(env_id, env_type, 1, seed,
                        wrapper_kwargs={
