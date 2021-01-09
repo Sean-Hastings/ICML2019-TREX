@@ -29,11 +29,12 @@ class Net(nn.Module):
         x = F.leaky_relu(self.conv4(x))
         x = x.view(-1, 784)
         x = F.leaky_relu(self.fc1(x))
-        r = self.fc2(x)[0]
+        r = self.fc2(x).view(-1)
+        print(r)
         return torch.argmax(r)
 
 
-    def score_states(self, traj, actions):
+    def score_states(self, traj, actions, _print=False):
         '''caltulate per-observation reward of trajectory'''
         if len(traj.shape) == 4:
             ran = torch.arange(traj.shape[0])
@@ -45,14 +46,24 @@ class Net(nn.Module):
             x = F.leaky_relu(self.conv4(x))
             x = x.view(-1, 784)
             x = F.leaky_relu(self.fc1(x))
-            r = self.fc2(x)[ran, actions.view(-1)]
+            r = self.fc2(x)
+            abs = torch.abs(r.mean(dim=1)).mean() # encourage "advantage" predictions
+            r = r - r.mean(dim=1).view(-1, 1)
+            if _print:
+                print(r[0::25])
+                print(r[0::25].argmax(dim=1))
+                print(actions[0::25].view(-1))
+            r = r[ran, actions.view(-1)]
+            if _print:
+                print(r[0::25])
         else:
-            x = traj
-            r = None
-        return r.view(-1)
+            x   = traj
+            r   = None
+            abs = None
+        return r.view(-1), abs
 
 
-    def forward(self, traj_i, traj_j, actions_i, actions_j):
+    def forward(self, traj_i, traj_j, actions_i, actions_j, _print=False):
         '''compute cumulative return for each trajectory and return logits'''
         if not isinstance(traj_i, (tuple, list)):
             traj_i    = [traj_i]
@@ -62,13 +73,20 @@ class Net(nn.Module):
         lengths = [len(t) for traj in (traj_i, traj_j) for t in traj]
         accum   = [0] + list(accumulate(lengths))
         accum   = list(zip(accum[:-1], accum[1:]))
+        if _print:
+            print(accum)
         states  = torch.cat(traj_i + traj_j)
         actions = torch.cat(actions_i + actions_j)
-        rewards = self.score_states(states, actions)
+        rewards, abs = self.score_states(states, actions, _print)
         r_i     = [rewards[acc[0]:acc[1]] for acc in accum[:len(accum)//2]]
         r_j     = [rewards[acc[0]:acc[1]] for acc in accum[len(accum)//2:]]
         cum_r_i = torch.cat([torch.mean(r).view(-1) for r in r_i])
         cum_r_j = torch.cat([torch.mean(r).view(-1) for r in r_j])
         comp_r  = torch.stack([cum_r_i, cum_r_j], dim=-1)
+        if _print:
+            print(comp_r)
         comp_r  = torch.softmax(comp_r, dim=-1)
-        return comp_r
+        if _print:
+            print(comp_r)
+            print('==========================')
+        return comp_r, abs

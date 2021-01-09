@@ -13,6 +13,7 @@ from baselines.common.vec_env.vec_frame_stack import VecFrameStack
 
 from utils.model import Net
 from utils.constants import get_env_id_type
+from utils.agent import *
 
 
 _print = print
@@ -22,12 +23,18 @@ def print(*args, **kwargs):
 
 
 
-def generate_demos(env, env_name, model, device, save_dir='evals', episodes=100):
+def generate_demos(env, env_name, model, agent, device, save_dir='evals', episodes=100):
     os.makedirs(save_dir, exist_ok=True)
     save_path = save_dir + '/' + model.name + '.log'
     if os.path.exists(save_path):
         print('evaluation not completed as %s already exists' % save_dir)
         return
+
+    model_path = "models/" + env_name + "_25/01050"
+    if env_name == "seaquest":
+        model_path = "models/" + env_name + "_5/00035"
+
+    agent.load(model_path)
 
     logs = [[], []] # steps, return
     makedirs(save_dir, exist_ok=True)
@@ -40,10 +47,14 @@ def generate_demos(env, env_name, model, device, save_dir='evals', episodes=100)
             steps = 0
             acc_reward = 0
             while True:
+                a_act = agent.act(ob, r, done)
                 ob = torch.from_numpy(ob).float().to(device)
                 action = model.act(ob)
 
+                print(a_act, action)
+
                 ob, r, done, _ = env.step(action)
+                env.render()
                 ob = preprocess(ob, env_name)
                 acc_reward += r[0]
                 steps += 1
@@ -80,9 +91,11 @@ if __name__=="__main__":
                        })
     env = VecFrameStack(env, 4)
 
+    agent = PPO2Agent(env, env_type, True)
+
     model = Net(env.action_space.n, args.model_path[args.model_path.find('learned_models')+len('learned_models/'):args.model_path.find('.params')])
     model.load_state_dict(torch.load(args.model_path))
     model.eval()
     model.to(device)
 
-    generate_demos(env, args.env_name, model, device, save_dir='evals', episodes=args.num_episodes)
+    generate_demos(env, args.env_name, model, agent, device, save_dir='evals', episodes=args.num_episodes)
