@@ -12,17 +12,18 @@ class Net(nn.Module):
         self.action_space = action_space
         self.name = name
 
-        multiplier = 4
+        multiplier = 1
 
-        self.linshape = 784*multiplier
+        self.filter_count = 16
+        self.linshape  = 784*multiplier
+        self.linshape2 = 64
 
-        self.conv1 = nn.Conv2d(4, 64, 7, stride=3)
-        self.conv2 = nn.Conv2d(64, 64, 5, stride=2)
-        self.conv3 = nn.Conv2d(64, 64, 3, stride=1)
-        self.conv4 = nn.Conv2d(64, 16*multiplier, 3, stride=1)
-        self.fc1 = nn.Linear(self.linshape, 512)
-        #self.fc1 = nn.Linear(1936,64)
-        self.fc2 = nn.Linear(512, action_space)
+        self.conv1 = nn.Conv2d(4, self.filter_count, 7, stride=3)
+        self.conv2 = nn.Conv2d(self.filter_count, self.filter_count, 5, stride=2)
+        self.conv3 = nn.Conv2d(self.filter_count, self.filter_count, 3, stride=1)
+        self.conv4 = nn.Conv2d(self.filter_count, 16*multiplier, 3, stride=1)
+        self.fc1 = nn.Linear(self.linshape, self.linshape2)
+        self.fc2 = nn.Linear(self.linshape2, action_space)
 
 
     def act(self, ob):

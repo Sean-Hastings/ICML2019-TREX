@@ -1,6 +1,28 @@
 # Atari Experiments #
 
 
+
+
+
+TODO:
+- print all args to make reading grid scripts easier
+- pass args object into training function for better flexibility
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 This directory contains code and learned reward functions for "Extrapolating Beyond Suboptimal Demonstrations via Inverse Reinforcement Learning from Observations". ICML 2019.
 
 
