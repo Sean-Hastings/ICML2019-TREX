@@ -35,7 +35,6 @@ class Net(nn.Module):
         x = x.view(-1, self.linshape)
         x = F.leaky_relu(self.fc1(x))
         r = self.fc2(x).view(-1)
-        print(r)
         return torch.argmax(r)
 
 

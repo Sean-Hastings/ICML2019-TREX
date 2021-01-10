@@ -51,7 +51,7 @@ def generate_demos(env, env_name, model, agent, device, save_dir='evals', episod
                 ob = torch.from_numpy(ob).float().to(device)
                 action = model.act(ob)
 
-                print(a_act, action)
+                #print(a_act, action)
 
                 ob, r, done, _ = env.step(action)
                 #env.render()

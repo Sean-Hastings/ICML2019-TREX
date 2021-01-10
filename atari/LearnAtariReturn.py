@@ -24,7 +24,7 @@ def print(*args, **kwargs):
 
 
 # Train the network
-def learn_return(network, optimizer, dataset, num_iter, batch_size, l1_reg, checkpoint_dir, log_dir, retsymb='\r', bc=False):
+def learn_return(network, optimizer, dataset, log_dir, args):
     network.train()
     #check if gpu available
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -34,10 +34,11 @@ def learn_return(network, optimizer, dataset, num_iter, batch_size, l1_reg, chec
 
     logs = [[],[],[],[]] # (losses, epoch_losses, accuracies, magnitudes)
 
+    retsymb = '\n' if args.grid else '\r'
     debug = True
     print_interval = 100
 
-    for epoch in range(num_iter):
+    for epoch in range(args.num_iter):
         dloader = DataLoader(dataset, shuffle=True, pin_memory=True, num_workers=8)
 
         n_correct  = 0
@@ -58,7 +59,7 @@ def learn_return(network, optimizer, dataset, num_iter, batch_size, l1_reg, chec
 
             frames += traj_i[0].shape[0] + traj_j[0].shape[0]
 
-            if bc:
+            if args.bc:
                 for traj, actions in zip(traj_i+traj_j, actions_i+actions_j):
                     outputs = network.bc(traj)
                     loss = loss_criterion(outputs, actions.long().view(-1)).mean()
@@ -72,11 +73,11 @@ def learn_return(network, optimizer, dataset, num_iter, batch_size, l1_reg, chec
                 loss = loss_criterion(outputs, labels.long()).mean()
                 if loss < 0.693:
                     n_correct += 1
-                loss = loss + l1_reg * abs
+                loss = loss + args.l1_reg * abs
                 loss.backward()
 
 
-            if i % batch_size == 0:
+            if i % args.batch_size == 0:
 
                 '''
                 print('')
@@ -137,7 +138,7 @@ def learn_return(network, optimizer, dataset, num_iter, batch_size, l1_reg, chec
         #'''
 
         #print("check pointing")
-        torch.save(net.state_dict(), checkpoint_dir)
+        torch.save(net.state_dict(), args.model_path)
 
     with open(log_dir, 'wb') as f:
         pickle.dump(logs, f)
@@ -156,9 +157,14 @@ if __name__=="__main__":
     parser.add_argument('--num_snippets', default = 6000, type = int, help = "number of short subtrajectories to sample")
     parser.add_argument('--num_iter', default=50, type=int, help="number of epochs")
     parser.add_argument('--lr', default=0.0001, type=float, help="learning rate")
+    parser.add_argument('--weight_decay', default=0.0, type=float, help="weight decay")
+    parser.add_argument('--l1_reg', default=0.01, type=float, help="l1 regularization on the magnitudes of the mean Q/advantage values")
+    parser.add_argument('--batch_size', default=32, type=int, help="number of (*sequentially backpropped*) samples between weight updates")
     parser.add_argument('--bc', default=False, action='store_true', help='train bc objective instead of no-trex')
 
     args = parser.parse_args()
+
+    print(args)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
@@ -183,14 +189,6 @@ if __name__=="__main__":
     min_snippet_length = 100 # 50 # min length of trajectory for training comparison
     max_snippet_length = 500 # 100
 
-    lr = args.lr # 0.00005
-    weight_decay = 0.0
-    num_iter = args.num_iter # 5 #num times through training data
-    l1_reg = 0.01
-    stochastic = True
-
-    batch_size = 32
-
     env = make_vec_env(env_id, env_type, 1, seed,
                        wrapper_kwargs={
                            'clip_rewards':False,
@@ -199,6 +197,8 @@ if __name__=="__main__":
 
 
     env = VecFrameStack(env, 4)
+
+    stochastic = True
     agent = PPO2Agent(env, env_type, stochastic)
 
     checkpoint_range = get_checkpoint_range(env_name, demo=True)
@@ -212,12 +212,10 @@ if __name__=="__main__":
         print('resuming from saved checkpoint')
         net.load_state_dict(torch.load(args.model_path))
     net.to(device)
-    optimizer = optim.Adam(net.parameters(),  lr=lr, weight_decay=weight_decay)
-
-    retsymb = '\n' if args.grid else '\r'
+    optimizer = optim.Adam(net.parameters(),  lr=args.lr, weight_decay=args.weight_decay)
 
     with LMDBDataset('datasets/' + env_name + ('_%d_%d.lmdb' % (num_snippets, num_trajs))) as dset:
-        learn_return(net, optimizer, dset, num_iter, batch_size, l1_reg, args.model_path, log_path, retsymb=retsymb, bc=args.bc)
+        learn_return(net, optimizer, dset, log_path, args)
 
     net.eval()
 
