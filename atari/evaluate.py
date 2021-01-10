@@ -63,6 +63,12 @@ def generate_demos(env, env_name, model, agent, device, save_dir='evals', episod
                     logs[0] += [steps]
                     logs[1] += [acc_reward]
                     break
+
+    print('return stats:')
+    print('min: {}'.format(np.min(logs[1])))
+    print('mean: {}'.format(np.mean(logs[1])))
+    print('max: {}'.format(np.max(logs[1])))
+
     with open(save_path, 'wb') as f:
         pickle.dump(logs, f)
 

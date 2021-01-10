@@ -12,11 +12,11 @@ class Net(nn.Module):
         self.action_space = action_space
         self.name = name
 
-        multiplier = 1
+        multiplier = 4
 
-        self.filter_count = 16
+        self.filter_count = 64
         self.linshape  = 784*multiplier
-        self.linshape2 = 64
+        self.linshape2 = 512
 
         self.conv1 = nn.Conv2d(4, self.filter_count, 7, stride=3)
         self.conv2 = nn.Conv2d(self.filter_count, self.filter_count, 5, stride=2)
