@@ -29,6 +29,8 @@ def generate_demos(env, env_name, model, agent, device, save_dir='evals', episod
     if os.path.exists(save_path):
         print('evaluation not completed as %s already exists' % save_dir)
         return
+        
+    print('evaluating {}'.format(env_name))
 
     model_path = "models/" + env_name + "_25/01050"
     if env_name == "seaquest":
