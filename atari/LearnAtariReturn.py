@@ -203,7 +203,7 @@ if __name__=="__main__":
 
     checkpoint_range = get_checkpoint_range(env_name, demo=True)
 
-    generate_demos(env, env_name, agent, args.models_dir, checkpoint_range)
+    generate_demos(env, env_name, agent, args.models_dir, checkpoint_range, episodes_per_checkpoint=10)
     create_training_data(env_name, num_trajs, num_snippets, min_snippet_length, max_snippet_length)
 
     # Now we create a reward network and optimize it using the training data.
