@@ -150,7 +150,7 @@ if __name__=="__main__":
     parser.add_argument('--env_name', default='', help='Select the environment name to run, i.e. pong')
     parser.add_argument('--model_path', default='', help="name and location for learned model params, e.g. ./learned_models/breakout.params")
     parser.add_argument('--resume', default=False, action='store_true', help="flag to resume from existing save instead of overwriting")
-    parser.add_argument('--seed', default=0, help="random seed for experiments")
+    parser.add_argument('--seed', default=0, type=int, help="random seed for experiments")
     parser.add_argument('--grid', default=False, action='store_true', help="training on grid")
     parser.add_argument('--models_dir', default = ".", help="path to directory that contains a models directory in which the checkpoint models for demos are stored")
     parser.add_argument('--num_trajs', default = 0, type=int, help="number of downsampled full trajectories")
@@ -164,8 +164,6 @@ if __name__=="__main__":
 
     args = parser.parse_args()
 
-    print(args)
-
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 
@@ -173,16 +171,18 @@ if __name__=="__main__":
     env_id, env_type = get_env_id_type(env_name)
 
     os.makedirs('learned_models', exist_ok=True)
-    id = '_' + 's={}'.format(args.num_snippets) + '_t={}'.format(args.num_trajs)
+    id = '_s={}_t={}_{}'.format(args.num_snippets, args.num_trajs, 'bc' if args.bc else 'trax')
     args.model_path = 'learned_models/' + args.env_name + id + '.params'
     log_path = 'logs/' + args.env_name + id + '.log'
     os.makedirs('logs', exist_ok=True)
 
-    seed = int(args.seed)
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    tf.set_random_seed(seed)
+    if args.seed == 0:
+        args.seed = int(time.time())
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    tf.set_random_seed(args.seed)
 
+    print(args)
     print("Training reward for", env_id)
     num_trajs =  args.num_trajs
     num_snippets = args.num_snippets

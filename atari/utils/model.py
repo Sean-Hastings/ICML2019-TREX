@@ -66,12 +66,10 @@ class Net(nn.Module):
             abs = torch.abs(r.mean(dim=1)).mean() # encourage "advantage" predictions
             r = r - r.mean(dim=1).view(-1, 1)
             if _print:
-                print(r[0::25])
-                print(r[0::25].argmax(dim=1))
-                print(actions[0::25].view(-1))
+                print(r[:10].cpu().numpy(), r[-10:].cpu().numpy())
+                print(r[:10].argmax(dim=1).cpu().numpy(), r[-10:].argmax(dim=1).cpu().numpy())
+                print(actions[:10].view(-1).cpu().numpy(), actions[-10:].view(-1).cpu().numpy())
             r = r[ran, actions.view(-1)]
-            if _print:
-                print(r[0::25])
         else:
             x   = traj
             r   = None
@@ -89,15 +87,13 @@ class Net(nn.Module):
         lengths = [len(t) for traj in (traj_i, traj_j) for t in traj]
         accum   = [0] + list(accumulate(lengths))
         accum   = list(zip(accum[:-1], accum[1:]))
-        if _print:
-            print(accum)
         states  = torch.cat(traj_i + traj_j)
         actions = torch.cat(actions_i + actions_j)
         rewards, abs = self.score_states(states, actions, _print)
         r_i     = [rewards[acc[0]:acc[1]] for acc in accum[:len(accum)//2]]
         r_j     = [rewards[acc[0]:acc[1]] for acc in accum[len(accum)//2:]]
-        cum_r_i = torch.cat([torch.sum(r).view(-1) for r in r_i])
-        cum_r_j = torch.cat([torch.sum(r).view(-1) for r in r_j])
+        cum_r_i = torch.cat([torch.mean(r).view(-1) for r in r_i])
+        cum_r_j = torch.cat([torch.mean(r).view(-1) for r in r_j])
         comp_r  = torch.stack([cum_r_i, cum_r_j], dim=-1)
         if _print:
             print(comp_r)

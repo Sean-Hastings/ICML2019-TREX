@@ -26,11 +26,13 @@ def print(*args, **kwargs):
 def generate_demos(env, env_name, model, agent, device, save_dir='evals', episodes=100):
     os.makedirs(save_dir, exist_ok=True)
     save_path = save_dir + '/' + model.name + '.log'
+    '''
     if os.path.exists(save_path):
         print('evaluation not completed as %s already exists' % save_dir)
         return
-        
-    print('evaluating {}'.format(env_name))
+    '''
+
+    print('evaluating {}'.format(model.name))
 
     model_path = "models/" + env_name + "_25/01050"
     if env_name == "seaquest":
