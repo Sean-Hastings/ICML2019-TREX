@@ -171,17 +171,18 @@ if __name__=="__main__":
     env_name = args.env_name
     env_id, env_type = get_env_id_type(env_name)
 
-    os.makedirs('learned_models', exist_ok=True)
-    id = '_s={}_t={}_{}'.format(args.num_snippets, args.num_trajs, 'bc' if args.bc else 'trax')
-    args.model_path = 'learned_models/' + args.env_name + id + '.params'
-    log_path = 'logs/' + args.env_name + id + '.log'
-    os.makedirs('logs', exist_ok=True)
-
     if args.seed == 0:
         args.seed = int(time.time())
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     tf.set_random_seed(args.seed)
+
+    os.makedirs('learned_models', exist_ok=True)
+    id = '_s={}_t={}_{}_{}'.format(args.num_snippets, args.num_trajs, 'bc' if args.bc else 'trax', args.seed)
+    model_name = args.env_name + id
+    args.model_path = 'learned_models/' + model_name + '.params'
+    log_path = 'logs/' + model_name + '.log'
+    os.makedirs('logs', exist_ok=True)
 
     print(args)
     print("Training reward for", env_id)
@@ -209,7 +210,7 @@ if __name__=="__main__":
 
     if not args.data_only:
         # Now we create a reward network and optimize it using the training data.
-        net = Net(env.action_space.n, env_name + ('_%d_%d' % (num_snippets, num_trajs)))
+        net = Net(env.action_space.n, model_name)
         if args.resume:
             print('resuming from saved checkpoint')
             net.load_state_dict(torch.load(args.model_path))
