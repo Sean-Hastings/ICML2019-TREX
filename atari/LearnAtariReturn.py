@@ -190,7 +190,7 @@ if __name__=="__main__":
     min_snippet_length = 100 # 50 # min length of trajectory for training comparison
     max_snippet_length = 500 # 100
 
-    env = make_vec_env(env_id, env_type, 1, seed,
+    env = make_vec_env(env_id, env_type, 1, args.seed,
                        wrapper_kwargs={
                            'clip_rewards':False,
                            'episode_life':False,
