@@ -1,0 +1,11 @@
+#!/bin/bash
+
+for var in "$@"
+do
+  bash grid_script_trax "$var"
+  bash grid_script_trax "$var"
+  bash grid_script_trax "$var"
+  bash grid_script_bc "$var"
+  bash grid_script_bc "$var"
+  bash grid_script_bc "$var"
+done

@@ -2,10 +2,9 @@ MUJOCO_ENVS = ['ant', 'hopper', 'halfcheetah', 'humanoid', 'pusher', 'reacher', 
 
 CHECKPOINT_DICT = {
     'enduro': (3100, 3650, 4450, 50),
-    'seaquest': (5, 35, 70, 5),
-    'hero': (300, 1500, 2400, 50),
-    'mujoco': (40, 320, 480, 20),
-    'other': (100, 1050, 1450, 50)
+    'seaquest': (10, 65, 70, 5),
+    #'hero': (300, 1500, 2400, 50),
+    'other': (50, 600, 1450, 50)
 }
 
 def get_env_id_type(env_name):

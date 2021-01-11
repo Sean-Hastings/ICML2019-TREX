@@ -12,13 +12,18 @@ class Net(nn.Module):
         self.action_space = action_space
         self.name = name
 
-        self.conv1 = nn.Conv2d(4, 16, 7, stride=3)
-        self.conv2 = nn.Conv2d(16, 16, 5, stride=2)
-        self.conv3 = nn.Conv2d(16, 16, 3, stride=1)
-        self.conv4 = nn.Conv2d(16, 16, 3, stride=1)
-        self.fc1 = nn.Linear(784, 64)
-        #self.fc1 = nn.Linear(1936,64)
-        self.fc2 = nn.Linear(64, action_space)
+        multiplier = 4
+
+        self.filter_count = 64
+        self.linshape  = 784*multiplier
+        self.linshape2 = 512
+
+        self.conv1 = nn.Conv2d(4, self.filter_count, 7, stride=3)
+        self.conv2 = nn.Conv2d(self.filter_count, self.filter_count, 5, stride=2)
+        self.conv3 = nn.Conv2d(self.filter_count, self.filter_count, 3, stride=1)
+        self.conv4 = nn.Conv2d(self.filter_count, 16*multiplier, 3, stride=1)
+        self.fc1 = nn.Linear(self.linshape, self.linshape2)
+        self.fc2 = nn.Linear(self.linshape2, action_space)
 
 
     def act(self, ob):
@@ -27,13 +32,25 @@ class Net(nn.Module):
         x = F.leaky_relu(self.conv2(x))
         x = F.leaky_relu(self.conv3(x))
         x = F.leaky_relu(self.conv4(x))
-        x = x.view(-1, 784)
+        x = x.view(-1, self.linshape)
         x = F.leaky_relu(self.fc1(x))
-        r = self.fc2(x)[0]
+        r = self.fc2(x).view(-1)
         return torch.argmax(r)
 
 
-    def score_states(self, traj, actions):
+    def bc(self, traj):
+        x = traj.permute(0,3,1,2).contiguous() #get into NCHW format
+        x = F.leaky_relu(self.conv1(x))
+        x = F.leaky_relu(self.conv2(x))
+        x = F.leaky_relu(self.conv3(x))
+        x = F.leaky_relu(self.conv4(x))
+        x = x.view(-1, self.linshape)
+        x = F.leaky_relu(self.fc1(x))
+        r = self.fc2(x)
+        return torch.softmax(r, dim=-1)
+
+
+    def score_states(self, traj, actions, _print=False):
         '''caltulate per-observation reward of trajectory'''
         if len(traj.shape) == 4:
             ran = torch.arange(traj.shape[0])
@@ -43,16 +60,24 @@ class Net(nn.Module):
             x = F.leaky_relu(self.conv2(x))
             x = F.leaky_relu(self.conv3(x))
             x = F.leaky_relu(self.conv4(x))
-            x = x.view(-1, 784)
+            x = x.view(-1, self.linshape)
             x = F.leaky_relu(self.fc1(x))
-            r = self.fc2(x)[ran, actions.view(-1)]
+            r = self.fc2(x)
+            abs = torch.abs(r.mean(dim=1)).mean() # encourage "advantage" predictions
+            r = r - r.mean(dim=1).view(-1, 1)
+            if _print:
+                print(r[:10].cpu().numpy(), r[-10:].cpu().numpy())
+                print(r[:10].argmax(dim=1).cpu().numpy(), r[-10:].argmax(dim=1).cpu().numpy())
+                print(actions[:10].view(-1).cpu().numpy(), actions[-10:].view(-1).cpu().numpy())
+            r = r[ran, actions.view(-1)]
         else:
-            x = traj
-            r = None
-        return r.view(-1)
+            x   = traj
+            r   = None
+            abs = None
+        return r.view(-1), abs
 
 
-    def forward(self, traj_i, traj_j, actions_i, actions_j):
+    def forward(self, traj_i, traj_j, actions_i, actions_j, _print=False):
         '''compute cumulative return for each trajectory and return logits'''
         if not isinstance(traj_i, (tuple, list)):
             traj_i    = [traj_i]
@@ -64,11 +89,16 @@ class Net(nn.Module):
         accum   = list(zip(accum[:-1], accum[1:]))
         states  = torch.cat(traj_i + traj_j)
         actions = torch.cat(actions_i + actions_j)
-        rewards = self.score_states(states, actions)
+        rewards, abs = self.score_states(states, actions, _print)
         r_i     = [rewards[acc[0]:acc[1]] for acc in accum[:len(accum)//2]]
         r_j     = [rewards[acc[0]:acc[1]] for acc in accum[len(accum)//2:]]
         cum_r_i = torch.cat([torch.mean(r).view(-1) for r in r_i])
         cum_r_j = torch.cat([torch.mean(r).view(-1) for r in r_j])
         comp_r  = torch.stack([cum_r_i, cum_r_j], dim=-1)
+        if _print:
+            print(comp_r)
         comp_r  = torch.softmax(comp_r, dim=-1)
-        return comp_r
+        if _print:
+            print(comp_r)
+            print('==========================')
+        return comp_r, abs
