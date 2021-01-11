@@ -161,6 +161,7 @@ if __name__=="__main__":
     parser.add_argument('--l1_reg', default=0.01, type=float, help="l1 regularization on the magnitudes of the mean Q/advantage values")
     parser.add_argument('--batch_size', default=32, type=int, help="number of (*sequentially backpropped*) samples between weight updates")
     parser.add_argument('--bc', default=False, action='store_true', help='train bc objective instead of no-trex')
+    parser.add_argument('--data_only', default=False, action='store_true', help="don't train, just collect and prep data")
 
     args = parser.parse_args()
 
@@ -206,17 +207,18 @@ if __name__=="__main__":
     generate_demos(env, env_name, agent, args.models_dir, checkpoint_range, episodes_per_checkpoint=10)
     create_training_data(env_name, num_trajs, num_snippets, min_snippet_length, max_snippet_length)
 
-    # Now we create a reward network and optimize it using the training data.
-    net = Net(env.action_space.n, env_name + ('_%d_%d' % (num_snippets, num_trajs)))
-    if args.resume:
-        print('resuming from saved checkpoint')
-        net.load_state_dict(torch.load(args.model_path))
-    net.to(device)
-    optimizer = optim.Adam(net.parameters(),  lr=args.lr, weight_decay=args.weight_decay)
+    if not args.data_only:
+        # Now we create a reward network and optimize it using the training data.
+        net = Net(env.action_space.n, env_name + ('_%d_%d' % (num_snippets, num_trajs)))
+        if args.resume:
+            print('resuming from saved checkpoint')
+            net.load_state_dict(torch.load(args.model_path))
+        net.to(device)
+        optimizer = optim.Adam(net.parameters(),  lr=args.lr, weight_decay=args.weight_decay)
 
-    with LMDBDataset('datasets/' + env_name + ('_%d_%d.lmdb' % (num_snippets, num_trajs))) as dset:
-        learn_return(net, optimizer, dset, log_path, args)
+        with LMDBDataset('datasets/' + env_name + ('_%d_%d.lmdb' % (num_snippets, num_trajs))) as dset:
+            learn_return(net, optimizer, dset, log_path, args)
 
-    net.eval()
+        net.eval()
 
-    #print("accuracy", calc_accuracy(net, training_obs, training_labels))
+        #print("accuracy", calc_accuracy(net, training_obs, training_labels))
