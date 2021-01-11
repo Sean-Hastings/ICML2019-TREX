@@ -2,5 +2,5 @@
 
 for var in "$@"
 do
-  qsub -l gpus=1 -l vlong -cwd grid_script_helper_prep_data "$1"
+  qsub -l gpus=1 -l vlong -cwd grid_script_helper_prep_data "$var"
 done
