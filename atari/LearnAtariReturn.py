@@ -172,7 +172,7 @@ if __name__=="__main__":
     env_id, env_type = get_env_id_type(env_name)
 
     if args.seed == 0:
-        args.seed = int(time.time())
+        args.seed = int((time.time()%1)*100000)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     tf.set_random_seed(args.seed)
