@@ -63,8 +63,8 @@ class Net(nn.Module):
             x = x.view(-1, self.linshape)
             x = F.leaky_relu(self.fc1(x))
             r = self.fc2(x)
-            abs = torch.abs(r.mean(dim=1)).mean() # encourage "advantage" predictions
-            r = r - r.mean(dim=1).view(-1, 1)
+            abs = torch.abs(r).mean() # encourage zero-centered predictions
+            r = r
             if _print:
                 print(r[:10].cpu().numpy(), r[-10:].cpu().numpy())
                 print(r[:10].argmax(dim=1).cpu().numpy(), r[-10:].argmax(dim=1).cpu().numpy())
