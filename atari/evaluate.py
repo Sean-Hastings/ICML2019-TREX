@@ -33,6 +33,7 @@ def generate_demos(env, env_name, model, agent, device, save_dir='evals', episod
         return
     '''
 
+    print('')
     print('evaluating {}'.format(model.name))
 
     model_path = "models/" + env_name + "_25/01050"
@@ -81,7 +82,7 @@ def generate_demos(env, env_name, model, agent, device, save_dir='evals', episod
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('--env_name', default='', help='Select the environment name to run, i.e. pong')
-    parser.add_argument('--model_path', default='', help="name and location for learned model params, e.g. ./learned_models/breakout.params")
+    parser.add_argument('--model_path', default='', help="name and location for learned model params, e.g. ./learned_models/breakout")
     parser.add_argument('--seed', default=0, help="random seed for experiments")
     parser.add_argument('--num_episodes', default=100, type=int, help="number of episodes to eval")
     parser.add_argument('--temperature', default=1, type=float, help="policy temperature")
@@ -105,7 +106,7 @@ if __name__=="__main__":
 
     agent = PPO2Agent(env, env_type, True)
 
-    model_paths = glob(args.model_path[:args.model_path.find('.params')] + '*')
+    model_paths = glob(args.model_path + '*')
     model_names = [path[path.find('learned_models')+len('learned_models/'):path.find('.params')] for path in model_paths]
 
     for name, path in zip(model_names, model_paths):
