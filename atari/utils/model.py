@@ -71,9 +71,9 @@ class Net(nn.Module):
             abs = torch.abs(r).mean() # encourage zero-centered predictions
             r = r
             if _print:
-                print(r[:10].cpu().numpy(), r[-10:].cpu().numpy())
-                print(r[:10].argmax(dim=1).cpu().numpy(), r[-10:].argmax(dim=1).cpu().numpy())
-                print(actions[:10].view(-1).cpu().numpy(), actions[-10:].view(-1).cpu().numpy())
+                print(r[:10].cpu().detach().numpy(), r[-10:].cpu().detach().numpy())
+                print(r[:10].argmax(dim=1).cpu().detach().numpy(), r[-10:].argmax(dim=1).cpu().detach().numpy())
+                print(actions[:10].view(-1).cpu().detach().numpy(), actions[-10:].view(-1).cpu().detach().numpy())
             r = r[ran, actions.view(-1)]
         else:
             x   = traj
@@ -101,9 +101,9 @@ class Net(nn.Module):
         cum_r_j = torch.cat([torch.mean(r).view(-1) for r in r_j])
         comp_r  = torch.stack([cum_r_i, cum_r_j], dim=-1)
         if _print:
-            print(comp_r)
+            print(comp_r.cpu().detach().numpy())
         comp_r  = torch.softmax(comp_r, dim=-1)
         if _print:
-            print(comp_r)
+            print(comp_r.cpu().detach().numpy())
             print('==========================')
         return comp_r, abs
