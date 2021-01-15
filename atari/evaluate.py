@@ -24,7 +24,7 @@ def print(*args, **kwargs):
 
 
 
-def generate_demos(env, env_name, model, agent, device, save_dir='evals', episodes=100):
+def generate_demos(env, env_name, model, agent, device, save_dir='evals', episodes=100, temperature=1):
     os.makedirs(save_dir, exist_ok=True)
     save_path = save_dir + '/' + model.name + '.log'
     '''
@@ -54,7 +54,7 @@ def generate_demos(env, env_name, model, agent, device, save_dir='evals', episod
             while True:
                 a_act = agent.act(ob, r, done)
                 ob = torch.from_numpy(ob).float().to(device)
-                action = model.act(ob)
+                action = model.act(ob, temperature)
 
                 #print(a_act, action)
 
@@ -84,6 +84,7 @@ if __name__=="__main__":
     parser.add_argument('--model_path', default='', help="name and location for learned model params, e.g. ./learned_models/breakout.params")
     parser.add_argument('--seed', default=0, help="random seed for experiments")
     parser.add_argument('--num_episodes', default=100, type=int, help="number of episodes to eval")
+    parser.add_argument('--temperature', default=1, type=float, help="policy temperature")
 
     args = parser.parse_args()
 
@@ -113,5 +114,5 @@ if __name__=="__main__":
         model.eval()
         model.to(device)
 
-        generate_demos(env, args.env_name, model, agent, device, save_dir='evals', episodes=args.num_episodes)
+        generate_demos(env, args.env_name, model, agent, device, save_dir='evals', episodes=args.num_episodes, temperature=args.temperature)
         print(' ')

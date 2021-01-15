@@ -26,7 +26,7 @@ class Net(nn.Module):
         self.fc2 = nn.Linear(self.linshape2, action_space)
 
 
-    def act(self, ob):
+    def act(self, ob, temp=1):
         x = ob.permute(0,3,1,2).contiguous() #get into NCHW format
         x = F.leaky_relu(self.conv1(x))
         x = F.leaky_relu(self.conv2(x))
@@ -34,8 +34,13 @@ class Net(nn.Module):
         x = F.leaky_relu(self.conv4(x))
         x = x.view(-1, self.linshape)
         x = F.leaky_relu(self.fc1(x))
-        r = self.fc2(x).view(-1)
-        return torch.argmax(r)
+        r = self.fc2(x).view(-1) / temp
+        p = torch.softmax(r)
+        i = torch.rand()
+        bounds = list(accumulate(p))
+        for action, bound in enumerate(bounds):
+            if i <= bound:
+                return action
 
 
     def bc(self, traj):
