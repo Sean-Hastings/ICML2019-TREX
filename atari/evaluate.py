@@ -5,6 +5,7 @@ import sys
 import os.path
 import argparse
 from os import makedirs
+from glob import glob
 
 sys.path.append('./baselines/')
 from baselines.common.trex_utils import preprocess
@@ -103,9 +104,14 @@ if __name__=="__main__":
 
     agent = PPO2Agent(env, env_type, True)
 
-    model = Net(env.action_space.n, args.model_path[args.model_path.find('learned_models')+len('learned_models/'):args.model_path.find('.params')])
-    model.load_state_dict(torch.load(args.model_path))
-    model.eval()
-    model.to(device)
+    model_paths = glob(args.model_path[:args.model_path.find('.params')] + '*')
+    model_names = [path[path.find('learned_models')+len('learned_models/'):path.find('.params')] for path in model_paths]
 
-    generate_demos(env, args.env_name, model, agent, device, save_dir='evals', episodes=args.num_episodes)
+    for name, path in zip(model_names, model_paths):
+        model = Net(env.action_space.n, name)
+        model.load_state_dict(torch.load(path))
+        model.eval()
+        model.to(device)
+
+        generate_demos(env, args.env_name, model, agent, device, save_dir='evals', episodes=args.num_episodes)
+        print(' ')
