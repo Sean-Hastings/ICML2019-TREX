@@ -2,7 +2,5 @@
 
 source /data/people/shastin1/miniconda3/bin/activate trex
 
-echo python evaluate.py --env_name "$1" --model_path learned_models/"$1"_s=0_t=50000
-
 python evaluate.py --env_name "$1" --model_path learned_models/"$1"_s=0_t=50000
 
