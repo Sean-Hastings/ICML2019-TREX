@@ -74,12 +74,12 @@ class Net(nn.Module):
                 print(r[:10].cpu().detach().numpy(), r[-10:].cpu().detach().numpy())
                 print(r[:10].argmax(dim=1).cpu().detach().numpy(), r[-10:].argmax(dim=1).cpu().detach().numpy())
                 print(actions[:10].view(-1).cpu().detach().numpy(), actions[-10:].view(-1).cpu().detach().numpy())
-            r = r[ran, actions.view(-1)]
+            r = torch.stack([r[ran, actions.view(-1)].view(-1), r.max(dim=1).view(-1)], dim=1)
         else:
             x   = traj
             r   = None
             abs = None
-        return r.view(-1), abs
+        return r, abs
 
 
     def forward(self, traj_i, traj_j, actions_i, actions_j, _print=False):
@@ -97,8 +97,8 @@ class Net(nn.Module):
         rewards, abs = self.score_states(states, actions, _print)
         r_i     = [rewards[acc[0]:acc[1]] for acc in accum[:len(accum)//2]]
         r_j     = [rewards[acc[0]:acc[1]] for acc in accum[len(accum)//2:]]
-        cum_r_i = torch.cat([torch.mean(r).view(-1) for r in r_i])
-        cum_r_j = torch.cat([torch.mean(r).view(-1) for r in r_j])
+        cum_r_i = torch.cat([(r[0,0] + torch.sum(r[0,1:]-r[1,1:])).view(-1) for r in r_i])
+        cum_r_j = torch.cat([(r[0,0] + torch.sum(r[0,1:]-r[1,1:])).view(-1) for r in r_j])
         comp_r  = torch.stack([cum_r_i, cum_r_j], dim=-1)
         if _print:
             print(comp_r.cpu().detach().numpy())

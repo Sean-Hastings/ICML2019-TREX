@@ -114,6 +114,7 @@ baselines/gail/run_mujoco.py
 baselines/gail/statistics.py
 baselines/gail/trpo_mpi.py
 baselines/gail/dataset/__init__.py
+baselines/gail/dataset/lmdb_dset.py
 baselines/gail/dataset/mujoco_dset.py
 baselines/her/__init__.py
 baselines/her/actor_critic.py

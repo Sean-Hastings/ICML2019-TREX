@@ -72,5 +72,3 @@ def sf01(arr):
     """
     s = arr.shape
     return arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:])
-
-
