@@ -13,3 +13,4 @@
 *.lmdb
 *.log
 models
+logs

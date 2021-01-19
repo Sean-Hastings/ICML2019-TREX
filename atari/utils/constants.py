@@ -2,6 +2,7 @@ MUJOCO_ENVS = ['ant', 'hopper', 'halfcheetah', 'humanoid', 'pusher', 'reacher', 
 
 CHECKPOINT_DICT = {
     'enduro': (3100, 3650, 4450, 50),
+    'montezumarevenge': (0, 0, 0, 0),
     'seaquest': (10, 65, 70, 5),
     #'hero': (300, 1500, 2400, 50),
     'other': (50, 600, 1450, 50)
@@ -14,6 +15,8 @@ def get_env_id_type(env_name):
         env_id = "SpaceInvadersNoFrameskip-v4"
     elif env_name == "mspacman":
         env_id = "MsPacmanNoFrameskip-v4"
+    elif env_name == "montezumarevenge":
+        env_id = "MontezumaRevengeFrameskip-v4"
     elif env_name == "videopinball":
         env_id = "VideoPinballNoFrameskip-v4"
     elif env_name == "beamrider":
