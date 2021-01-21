@@ -6,7 +6,8 @@ import tensorflow as tf
 import numpy as np
 
 from baselines.common.mpi_running_mean_std import RunningMeanStd
-from baselines.common import tf_util as U
+import baselines.common.tf_util as U
+from baselines.acktr.utils import dense
 
 def logsigmoid(a):
     '''Equivalent to tf.log(tf.sigmoid(a))'''
@@ -21,9 +22,9 @@ class TransitionClassifier(object):
     def __init__(self, env, hidden_size, entcoeff=0.001, lr_rate=1e-3, scope="adversary"):
         self.scope = scope
         self.observation_shape = env.observation_space.shape
-        self.actions_shape = env.action_space.shape
+        self.actions_shape = (1,)
         self.input_shape = tuple([o+a for o, a in zip(self.observation_shape, self.actions_shape)])
-        self.num_actions = env.action_space.shape[0]
+        self.num_actions = env.action_space.n
         self.hidden_size = hidden_size
         self.build_ph()
         # Build grpah
@@ -67,10 +68,16 @@ class TransitionClassifier(object):
             with tf.variable_scope("obfilter"):
                 self.obs_rms = RunningMeanStd(shape=self.observation_shape)
             obs = (obs_ph - self.obs_rms.mean / self.obs_rms.std)
-            _input = tf.concat([obs, acs_ph], axis=1)  # concatenate the two input -> form a transition
-            p_h1 = tf.contrib.layers.fully_connected(_input, self.hidden_size, activation_fn=tf.nn.tanh)
-            p_h2 = tf.contrib.layers.fully_connected(p_h1, self.hidden_size, activation_fn=tf.nn.tanh)
-            logits = tf.contrib.layers.fully_connected(p_h2, 1, activation_fn=tf.identity)
+
+            last_out = obs
+            last_out = tf.nn.tanh(U.conv2d(last_out, 64, 'vfconv1', (7,7), (3,3), pad='VALID'))
+            last_out = tf.nn.tanh(U.conv2d(last_out, 64, 'vfconv2', (5,5), (2,2), pad='VALID'))
+            last_out = tf.nn.tanh(U.conv2d(last_out, 64, 'vfconv3', (3,3), (1,1), pad='VALID'))
+            last_out = tf.nn.tanh(U.conv2d(last_out, 64, 'vfconv4', (3,3), (1,1), pad='VALID'))
+            last_out = tf.reshape(last_out, tf.convert_to_tensor([-1, 784*4]))
+            last_out = tf.nn.tanh(tf.layers.dense(last_out, 512, kernel_initializer=U.normc_initializer(1.0)))
+            last_out = tf.concat([last_out, acs_ph], axis=1)
+            logits = tf.layers.dense(last_out+self.num_actions, 1, kernel_initializer=U.normc_initializer(1.0))
         return logits
 
     def get_trainable_variables(self):
@@ -80,8 +87,8 @@ class TransitionClassifier(object):
         sess = tf.get_default_session()
         if len(obs.shape) == 1:
             obs = np.expand_dims(obs, 0)
-        if len(acs.shape) == 1:
-            acs = np.expand_dims(acs, 0)
+        if len(acs.shape) == 0:
+            acs = np.array([[acs]])
         feed_dict = {self.generator_obs_ph: obs, self.generator_acs_ph: acs}
         reward = sess.run(self.reward_op, feed_dict)
         return reward

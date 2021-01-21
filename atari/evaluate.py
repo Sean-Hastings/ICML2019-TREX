@@ -1,16 +1,16 @@
 import numpy as np
 import torch
 import pickle
-import sys
 import os.path
 import argparse
 from os import makedirs
 from glob import glob
 
+import sys
 sys.path.append('./baselines/')
-from baselines.common.trex_utils import preprocess
 from baselines.common.cmd_util import make_vec_env
 from baselines.common.vec_env.vec_frame_stack import VecFrameStack
+from baselines.common.trex_utils import preprocess
 
 from utils.model import Net
 from utils.constants import get_env_id_type

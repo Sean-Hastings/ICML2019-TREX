@@ -41,8 +41,8 @@ class LMDB_Dset(object):
 
         self.demo_env = None
 
-        self.train_shuffled = [i for i in range(self.length*self.train_fraction)]
-        self.eval_shuffled = [i for i in range(self.length - self.length*self.train_fraction)]
+        self.train_shuffled = [i for i in range(int(self.length*self.train_fraction))]
+        self.eval_shuffled = [i for i in range(int(self.length - self.length*self.train_fraction))]
         self.shuffled = [i for i in range(self.length)]
 
         self.train_pointer = 0
@@ -75,7 +75,7 @@ class LMDB_Dset(object):
 
         states, actions = list(zip(*samples))
 
-        return np.concatenate(states), np.concatenate(actions)
+        return np.transpose(np.concatenate(states), (0, 3, 1, 2)), np.concatenate(actions)
 
 
     def __getitem__(self, idx):
@@ -91,8 +91,8 @@ class LMDB_Dset(object):
         states  = traj['states']
         actions = traj['actions']
 
-        states = np.array(traj_a_states, dtype=np.float32)/255.0
-        actions = np.array(traj_a_actions, dtype=np.int32)
+        states = np.array(states, dtype=np.float32)/255.0
+        actions = np.array(actions, dtype=np.int32)
 
         return states, actions
 

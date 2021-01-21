@@ -16,7 +16,7 @@ def get_env_id_type(env_name):
     elif env_name == "mspacman":
         env_id = "MsPacmanNoFrameskip-v4"
     elif env_name == "montezumarevenge":
-        env_id = "MontezumaRevengeFrameskip-v4"
+        env_id = "MontezumaRevengeNoFrameskip-v4"
     elif env_name == "videopinball":
         env_id = "VideoPinballNoFrameskip-v4"
     elif env_name == "beamrider":
