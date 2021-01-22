@@ -82,7 +82,7 @@ def argsparser():
     parser.add_argument('--BC_max_iter', help='Max iteration for training BC', type=int, default=1e4)
     args = parser.parse_args()
 
-    args.env_id = get_env_id_type(args.env_name)
+    args.env_id, _ = get_env_id_type(args.env_name)
     args.expert_path = 'datasets/' + args.env_name + '_0_50000.lmdb'
 
     return args
