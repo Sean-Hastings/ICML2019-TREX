@@ -1,3 +1,0 @@
-#!/bin/bash
-
-qsub -l gpus=1 -l vlong -cwd grid_script_helper_trax "$1"

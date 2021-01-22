@@ -1,0 +1,3 @@
+#!/bin/bash
+
+qsub -l gpus=1 -l vlong -cwd grid_scripts/helper_gail "$1" "$2"

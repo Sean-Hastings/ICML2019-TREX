@@ -19,10 +19,37 @@ from baselines import logger
 from baselines.gail.dataset.mujoco_dset import Mujoco_Dset
 from baselines.gail.dataset.lmdb_dset import LMDB_Dset
 from baselines.gail.adversary import TransitionClassifier
+from baselines.common.cmd_util import make_vec_env
+from baselines.common.vec_env.vec_frame_stack import VecFrameStack
 
+
+def get_env_id_type(env_name):
+    env_type = "atari"
+
+    if env_name == "spaceinvaders":
+        env_id = "SpaceInvadersNoFrameskip-v4"
+    elif env_name == "mspacman":
+        env_id = "MsPacmanNoFrameskip-v4"
+    elif env_name == "montezumarevenge":
+        env_id = "MontezumaRevengeNoFrameskip-v4"
+    elif env_name == "videopinball":
+        env_id = "VideoPinballNoFrameskip-v4"
+    elif env_name == "beamrider":
+        env_id = "BeamRiderNoFrameskip-v4"
+    elif env_name == "halfcheetah":
+        env_id = "HalfCheetah-v2"
+        env_type = 'mujoco'
+    elif env_name in MUJOCO_ENVS:
+        env_id = env_name[0].upper() + env_name[1:] + "-v2"
+        env_type = 'mujoco'
+    else:
+        env_id = env_name[0].upper() + env_name[1:] + "NoFrameskip-v4"
+
+    return env_id, env_type
 
 def argsparser():
     parser = argparse.ArgumentParser("Tensorflow Implementation of GAIL")
+    parser.add_argument('--env_name', help='environment Name')
     parser.add_argument('--env_id', help='environment ID', default='Hopper-v2')
     parser.add_argument('--seed', help='RNG seed', type=int, default=0)
     parser.add_argument('--expert_path', type=str, default='data/deterministic.trpo.Hopper.0.00.npz')
@@ -53,7 +80,12 @@ def argsparser():
     # Behavior Cloning
     boolean_flag(parser, 'pretrained', default=False, help='Use BC to pretrain')
     parser.add_argument('--BC_max_iter', help='Max iteration for training BC', type=int, default=1e4)
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    args.env_id = get_env_id_type(args.env_name)
+    args.expert_path = 'datasets/' + args.env_name + '_0_50000.lmdb'
+
+    return args
 
 
 def get_task_name(args):
@@ -72,14 +104,22 @@ def get_task_name(args):
 def main(args):
     U.make_session(num_cpu=1).__enter__()
     set_global_seeds(args.seed)
-    env = gym.make(args.env_id)
+    #env = gym.make(args.env_id)
 
     def policy_fn(name, ob_space, ac_space, reuse=False):
-        return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
+        return mlp_policy.CNNPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
                                     reuse=reuse, hid_size=args.policy_hidden_size, num_hid_layers=2)
-    env = bench.Monitor(env, logger.get_dir() and
-                        osp.join(logger.get_dir(), "monitor.json"))
-    env.seed(args.seed)
+    #env = bench.Monitor(env, logger.get_dir() and
+    #                    osp.join(logger.get_dir(), "monitor.json"))
+
+    env = make_vec_env(args.env_id, 'atari', 1, args.seed,
+                       wrapper_kwargs={
+                           'clip_rewards':False,
+                           'episode_life':False,
+                       })
+    env = VecFrameStack(env, 4)
+
+    #env.seed(args.seed)
     gym.logger.setLevel(logging.WARN)
     task_name = get_task_name(args)
     args.checkpoint_dir = osp.join(args.checkpoint_dir, task_name)
@@ -138,7 +178,7 @@ def train(env, seed, policy_fn, reward_giver, dataset, algo,
             logger.set_level(logger.DISABLED)
         workerseed = seed + 10000 * MPI.COMM_WORLD.Get_rank()
         set_global_seeds(workerseed)
-        env.seed(workerseed)
+        #env.seed(workerseed)
         trpo_mpi.learn(env, policy_fn, reward_giver, dataset, rank,
                        pretrained=pretrained, pretrained_weight=pretrained_weight,
                        g_step=g_step, d_step=d_step,

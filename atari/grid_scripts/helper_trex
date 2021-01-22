@@ -1,0 +1,5 @@
+#!/bin/bash
+
+source /data/people/shastin1/miniconda3/bin/activate trex
+
+python trex_baseline.py --env_name "$1"
