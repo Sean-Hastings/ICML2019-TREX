@@ -88,11 +88,13 @@ def learn_return(network, optimizer, dataset, log_dir, args):
                         _norm += [p.grad.view(-1).detach()]
                 _norm = torch.cat(_norm).norm()
                 print('grad norm pre-clip: {}'.format(_norm))
-
+                '''
+                
 
                 clip_grad_norm_(network.parameters(), 10)
 
 
+                '''
                 _norm = []
                 for p in network.parameters():
                     if p.grad is not None:
