@@ -103,6 +103,20 @@ if __name__=="__main__":
 
     args = parser.parse_args()
 
+    #########################################
+    # Hack to make the grid scripts cleaner #
+    #########################################
+
+    if args.env_name == 'enduro':
+        args.num_trajs = 50000
+        args.num_snippets = 0
+    else:
+        args.num_trajs = 0
+        args.num_snippets = 50000
+
+
+    #########################################
+
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 

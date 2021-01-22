@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for var in "$@"
+do
+    qsub -l gpus=1 -l vlong -cwd grid_scripts/helper_eval "$var"
+done

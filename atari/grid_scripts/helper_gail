@@ -1,0 +1,5 @@
+#!/bin/bash
+
+source /data/people/shastin1/miniconda3/bin/activate trex
+
+python -m baselines.gail.run_mujoco --env_name "$1"
