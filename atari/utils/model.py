@@ -74,7 +74,7 @@ class Net(nn.Module):
                 print(r[:10].cpu().detach().numpy(), r[-10:].cpu().detach().numpy())
                 print(r[:10].argmax(dim=1).cpu().detach().numpy(), r[-10:].argmax(dim=1).cpu().detach().numpy())
                 print(actions[:10].view(-1).cpu().detach().numpy(), actions[-10:].view(-1).cpu().detach().numpy())
-            r = torch.stack([r[ran, actions.view(-1)].view(-1), r.max(dim=1).view(-1)], dim=1)
+            r = torch.stack([r[ran, actions.view(-1)].view(-1), r.max(dim=1)[0].view(-1)], dim=1)
         else:
             x   = traj
             r   = None
